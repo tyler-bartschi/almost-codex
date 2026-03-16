@@ -1,0 +1,32 @@
+{
+  "name": "almost-codex",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm run compile",
+    "compile": "npm run clean && npm run test && tsc",
+    "clean": "rm -rf dist",
+    "script": "node ./dist/index.js",
+    "test": "echo \"Error: no test specified\" > /dev/null"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tyler-bartschi/almost-codex.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tyler-bartschi/almost-codex/issues"
+  },
+  "homepage": "https://github.com/tyler-bartschi/almost-codex#readme",
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@types/node": "^25.5.0"
+  }
+}
