@@ -23,10 +23,14 @@
   },
   "homepage": "https://github.com/tyler-bartschi/almost-codex#readme",
   "devDependencies": {
+    "@types/prompt-sync": "^4.2.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@types/node": "^25.5.0"
+    "@types/node": "^25.5.0",
+    "openai": "^6.31.0",
+    "prompt-sync": "^4.2.0",
+    "yaml": "^2.8.2"
   }
 }
