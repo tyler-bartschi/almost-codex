@@ -2,6 +2,9 @@ import OpenAI from "openai";
 import * as fs from "fs";
 import * as yaml from "yaml";
 import promptSync from "prompt-sync";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY environment variable is not set.");
@@ -16,7 +19,7 @@ const prompt = promptSync();
 async function main() {
   try {
     const rawContent = fs.readFileSync(
-      "src/personalities/efficient.yaml",
+      "src/personalities/sarcastic.yaml",
       "utf-8",
     );
 
