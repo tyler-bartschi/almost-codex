@@ -1,5 +1,5 @@
 {
-  "name": "system_default",
+  "name": "user_default",
   "default_personality": "efficient",
   "default_reasoning": "medium",
   "default_model": "gpt-5-nano",

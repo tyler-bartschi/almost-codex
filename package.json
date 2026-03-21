@@ -8,7 +8,7 @@
     "compile": "npm run clean && npm run test && tsc",
     "clean": "rm -rf dist",
     "script": "node ./dist/index.js",
-    "test": "echo \"Error: no test specified\" > /dev/null"
+    "test": "jest --config jest.config.js --passWithNoTests"
   },
   "repository": {
     "type": "git",
@@ -23,7 +23,12 @@
   },
   "homepage": "https://github.com/tyler-bartschi/almost-codex#readme",
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "@types/prompt-sync": "^4.2.3",
+    "jest": "^29.7.0",
+    "jest-util": "^29.7.0",
+    "ts-jest": "^29.4.6",
+    "ts-mockito": "npm:@typestrong/ts-mockito@^2.7.12",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
