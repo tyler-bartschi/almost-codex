@@ -274,6 +274,31 @@ export class Settings {
     );
   }
 
+  public revertToDefaults(): void {
+    const systemConfigPath = Settings.getConfigPath("system_default");
+    const userConfigPath = Settings.getConfigPath("user_default");
+
+    if (!fs.existsSync(systemConfigPath)) {
+      throw new Error(`Settings file not found: ${systemConfigPath}`);
+    }
+
+    const systemRaw = fs.readFileSync(systemConfigPath, "utf-8");
+    const systemConfig = JSON.parse(systemRaw) as RawSettingsFile;
+    const userConfig: RawSettingsFile = {
+      ...systemConfig,
+      name: "user_default",
+    };
+
+    fs.mkdirSync(Settings.settingsDir, { recursive: true });
+    fs.writeFileSync(
+      userConfigPath,
+      `${JSON.stringify(userConfig, null, 2)}\n`,
+      "utf-8",
+    );
+
+    this.loadSettings("user_default");
+  }
+
   public setProtectedObjects(
     operation: AddRemoveOperation,
     pathOrObject?: string | FileSystemObject,
