@@ -61,14 +61,65 @@ export class FileSystemObject {
   private _type: FileSystemObjectType;
   private _path: string;
 
-  public constructor(path: string, type?: FileSystemObjectType) {
-    this._path = path;
+  public constructor(pathValue: string, type?: FileSystemObjectType) {
+    this._path = pathValue;
 
     if (type !== undefined) {
       this._type = type;
     } else {
-      this._type = path.startsWith("/") ? "directory" : "file";
+      this._type = FileSystemObject.inferType(pathValue);
     }
+  }
+
+  private static inferType(pathValue: string): FileSystemObjectType {
+    const trimmedPath = pathValue.trim();
+
+    if (trimmedPath.length === 0) {
+      return "file";
+    }
+
+    if (/[\\/]$/.test(trimmedPath)) {
+      return "directory";
+    }
+
+    const existingType = FileSystemObject.getExistingPathType(trimmedPath);
+    if (existingType) {
+      return existingType;
+    }
+
+    const baseName = path.basename(trimmedPath);
+    if (baseName === "." || baseName === "..") {
+      return "directory";
+    }
+
+    if (baseName.startsWith(".") && !baseName.slice(1).includes(".")) {
+      return "file";
+    }
+
+    if (path.extname(baseName) !== "") {
+      return "file";
+    }
+
+    if (trimmedPath.includes("/") || trimmedPath.includes("\\")) {
+      return "directory";
+    }
+
+    return "file";
+  }
+
+  private static getExistingPathType(pathValue: string): FileSystemObjectType | undefined {
+    const candidates = [pathValue, path.resolve(pathValue)];
+
+    for (const candidate of candidates) {
+      try {
+        const stats = fs.statSync(candidate);
+        return stats.isDirectory() ? "directory" : "file";
+      } catch {
+        continue;
+      }
+    }
+
+    return undefined;
   }
 
   public get type(): FileSystemObjectType {
@@ -89,11 +140,9 @@ export class FileSystemObject {
 }
 
 export class Settings {
-  private static readonly settingsDir = path.resolve(
-    process.cwd(),
-    "src",
-    "settings",
-  );
+  private static readonly settingsDir = process.env.SETTINGS_DIR
+    ? path.resolve(process.env.SETTINGS_DIR)
+    : path.resolve(__dirname, "..", "settings");
 
   private _configName: string;
   private _defaultPersonality: Personalities;

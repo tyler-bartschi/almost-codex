@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import { anything, reset, spy, when } from "ts-mockito";
 import { FileSystemObject, Settings } from "../../src/global/Settings";
@@ -65,18 +66,34 @@ describe("FileSystemObject", () => {
     expect(fso.path).toBe("notes.txt");
   });
 
-  it("infers directory type when path starts with slash", () => {
-    const fso = new FileSystemObject("/etc/config");
-
-    expect(fso.type).toBe("directory");
-    expect(fso.path).toBe("/etc/config");
-  });
-
-  it("infers file type when path does not start with slash", () => {
-    const fso = new FileSystemObject("relative/path.txt");
+  it("infers file type for an existing absolute file path", () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "settings-fso-file-"));
+    const filePath = path.join(tempDir, "config");
+    fs.writeFileSync(filePath, "content", "utf-8");
+    const fso = new FileSystemObject(filePath);
 
     expect(fso.type).toBe("file");
-    expect(fso.path).toBe("relative/path.txt");
+    expect(fso.path).toBe(filePath);
+
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it("infers directory type for an existing directory path", () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "settings-fso-dir-"));
+    const fso = new FileSystemObject(tempDir);
+
+    expect(fso.type).toBe("directory");
+    expect(fso.path).toBe(tempDir);
+
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it("uses path heuristics for non-existing paths", () => {
+    expect(new FileSystemObject("/tmp/non-existing/").type).toBe("directory");
+    expect(new FileSystemObject("/tmp/notes.txt").type).toBe("file");
+    expect(new FileSystemObject("relative/path").type).toBe("directory");
+    expect(new FileSystemObject("local.env").type).toBe("file");
+    expect(new FileSystemObject("README").type).toBe("file");
   });
 
   it("returns true for equals when type and path match", () => {

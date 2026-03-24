@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "build": "npm run compile",
-    "compile": "npm run clean && npm run test && tsc",
+    "compile": "npm run clean && npm run test && tsc && npm run copy-settings",
     "clean": "rm -rf dist",
+    "copy-settings": "node -e \"require('fs').cpSync('src/settings','dist/settings',{recursive:true,force:true})\"",
     "script": "node ./dist/index.js",
     "test": "jest --config jest.config.js --passWithNoTests"
   },
