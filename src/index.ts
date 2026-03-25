@@ -1,53 +1,59 @@
 import OpenAI from "openai";
-import * as fs from "fs";
-import * as yaml from "yaml";
 import promptSync from "prompt-sync";
 import dotenv from "dotenv";
+import { Settings, type AgentMode } from "./global/Settings";
+import { ReplExecutor, type ReplState } from "./repl/replExecutor";
+import { ReplParser } from "./repl/replParser";
 
 dotenv.config();
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error("OPENAI_API_KEY environment variable is not set.");
+function createOpenAIClient(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY environment variable is not set.");
+  }
+
+  return new OpenAI({ apiKey });
 }
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function createInitialState(): ReplState {
+  const settings = Settings.fromSettingsFile("user_default");
+  const currentMode: AgentMode = "code";
+  return {
+    currentMode,
+    settings,
+  };
+}
 
-const prompt = promptSync();
+export function main(): void {
+  const client = createOpenAIClient();
+  // void client;
 
-async function main() {
-  try {
-    const rawContent = fs.readFileSync(
-      "src/personalities/sarcastic.yaml",
-      "utf-8",
-    );
+  const parser = new ReplParser();
+  const executor = new ReplExecutor();
+  const state = createInitialState();
+  const prompt = promptSync({ sigint: true });
 
-    // replace with the actual configuration type
-    const config = yaml.parse(rawContent) as any;
+  while (true) {
+    const input = prompt(`[${state.currentMode}]> `);
+    const parsed = parser.parse(input);
 
-    const systemPrompt = config.prompt;
-
-    const history: any[] = [{ role: "system", content: systemPrompt }];
-
-    let message: string = prompt("Enter a message: ");
-
-    while (true) {
-      history.push({ role: "user", content: message });
-
-      const response = await client.responses.create({
-        model: "gpt-5-nano",
-        input: history,
-      });
-      console.log(response.output_text);
-      
-      message = prompt("");
-      if (message === "") {
-        return;
-      }
+    if (parsed.kind === "empty") {
+      continue;
     }
-  } catch (error) {
-    console.error(`Error calling OpenAI API:`, error);
+
+    if (parsed.kind === "error") {
+      console.log(parsed.message);
+      continue;
+    }
+
+    if (parsed.kind === "text") {
+      console.log(parsed.text);
+      continue;
+    }
+
+    const output = executor.execute(parsed.command, state);
+    console.log(output);
   }
 }
 
