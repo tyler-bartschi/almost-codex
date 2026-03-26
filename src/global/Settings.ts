@@ -57,10 +57,19 @@ interface SettingsFile {
   concealedObjects: Array<{ path: string; type?: FileSystemObjectType }>;
 }
 
+/**
+ * Represents a filesystem object reference (file or directory) used in settings.
+ */
 export class FileSystemObject {
   private _type: FileSystemObjectType;
   private _path: string;
 
+  /**
+   * Creates a filesystem object and infers its type when not explicitly provided.
+   * @param {string} pathValue Path value for the filesystem object.
+   * @param {FileSystemObjectType} [type] Explicit object type (`file` or `directory`).
+   * @returns {FileSystemObject} A new filesystem object instance.
+   */
   public constructor(pathValue: string, type?: FileSystemObjectType) {
     this._path = pathValue;
 
@@ -71,6 +80,11 @@ export class FileSystemObject {
     }
   }
 
+  /**
+   * Infers whether a path should be treated as a file or directory.
+   * @param {string} pathValue Raw path string to inspect.
+   * @returns {FileSystemObjectType} The inferred filesystem object type.
+   */
   private static inferType(pathValue: string): FileSystemObjectType {
     const trimmedPath = pathValue.trim();
 
@@ -107,6 +121,11 @@ export class FileSystemObject {
     return "file";
   }
 
+  /**
+   * Detects the type of an existing path on disk.
+   * @param {string} pathValue Path to check, relative or absolute.
+   * @returns {FileSystemObjectType | undefined} Existing type, or `undefined` when the path does not exist.
+   */
   private static getExistingPathType(pathValue: string): FileSystemObjectType | undefined {
     const candidates = [pathValue, path.resolve(pathValue)];
 
@@ -122,14 +141,27 @@ export class FileSystemObject {
     return undefined;
   }
 
+  /**
+   * Gets this object's filesystem type.
+   * @returns {FileSystemObjectType} The object type.
+   */
   public get type(): FileSystemObjectType {
     return this._type;
   }
 
+  /**
+   * Gets this object's raw path value.
+   * @returns {string} The stored path.
+   */
   public get path(): string {
     return this._path;
   }
 
+  /**
+   * Compares this object to another filesystem object by type and path.
+   * @param {any} other Value to compare against.
+   * @returns {boolean} `true` when both objects are equivalent; otherwise `false`.
+   */
   public equals(other: any): boolean {
     if (!(other instanceof FileSystemObject)) {
       return false;
@@ -139,6 +171,9 @@ export class FileSystemObject {
   }
 }
 
+/**
+ * Encapsulates loading, editing, and persisting application settings files.
+ */
 export class Settings {
   private static readonly settingsDir = process.env.SETTINGS_DIR
     ? path.resolve(process.env.SETTINGS_DIR)
@@ -154,6 +189,11 @@ export class Settings {
   private _concealedObjects: FileSystemObject[];
   private _agentSettings: AgentSettings;
 
+  /**
+   * Creates a settings instance from a normalized settings object.
+   * @param {SettingsFile} config Parsed settings configuration.
+   * @returns {Settings} A new settings instance.
+   */
   private constructor(config: SettingsFile) {
     this._configName = config.name;
     this._defaultPersonality = config.defaultPersonality;
@@ -170,6 +210,11 @@ export class Settings {
     this._agentSettings = config.agents;
   }
 
+  /**
+   * Loads a named settings file and returns a settings instance.
+   * @param {string} [configName="user_default"] Settings profile name to load.
+   * @returns {Settings} The loaded settings instance.
+   */
   public static fromSettingsFile(configName: string = "user_default"): Settings {
     const configPath = this.getConfigPath(configName);
 
@@ -181,46 +226,91 @@ export class Settings {
     return new Settings(config);
   }
 
+  /**
+   * Loads and returns the default user settings profile.
+   * @returns {Settings} The loaded `user_default` settings.
+   */
   public static fromUserDefault(): Settings {
     return this.fromSettingsFile("user_default");
   }
 
+  /**
+   * Gets the active configuration profile name.
+   * @returns {string} Current configuration name.
+   */
   public get configName(): string {
     return this._configName;
   }
 
+  /**
+   * Gets the default personality used by agents.
+   * @returns {Personalities} Default personality value.
+   */
   public get defaultPersonality(): Personalities {
     return this._defaultPersonality;
   }
 
+  /**
+   * Gets the default reasoning mode used by agents.
+   * @returns {OpenAIReasoningMode} Default reasoning mode.
+   */
   public get defaultReasoning(): OpenAIReasoningMode {
     return this._defaultReasoning;
   }
 
+  /**
+   * Gets the default model used by agents.
+   * @returns {OpenAIModel} Default OpenAI model.
+   */
   public get defaultModel(): OpenAIModel {
     return this._defaultModel;
   }
 
+  /**
+   * Gets the configured git safety mode.
+   * @returns {"safe" | "unsafe"} Git mode value.
+   */
   public get gitMode(): "safe" | "unsafe" {
     return this._gitMode;
   }
 
+  /**
+   * Gets the configured script execution safety mode.
+   * @returns {"safe" | "unsafe"} Script mode value.
+   */
   public get scriptMode(): "safe" | "unsafe" {
     return this._scriptMode;
   }
 
+  /**
+   * Gets a copy of protected filesystem objects.
+   * @returns {FileSystemObject[]} Protected objects list.
+   */
   public get protectedObjects(): FileSystemObject[] {
     return [...this._protectedObjects];
   }
 
+  /**
+   * Gets a copy of concealed filesystem objects.
+   * @returns {FileSystemObject[]} Concealed objects list.
+   */
   public get concealedObjects(): FileSystemObject[] {
     return [...this._concealedObjects];
   }
 
+  /**
+   * Gets a shallow copy of all agent settings grouped by mode.
+   * @returns {AgentSettings} Agent settings map.
+   */
   public get agentSettings(): AgentSettings {
     return { ...this._agentSettings };
   }
 
+  /**
+   * Sets the active configuration profile and persists or loads profile data as needed.
+   * @param {string} configName New configuration profile name.
+   * @returns {void} No return value.
+   */
   public set configName(configName: string) {
     if (configName === "system_default") {
       throw new Error("cannot change system_default settings");
@@ -241,31 +331,61 @@ export class Settings {
     this.saveSettings();
   }
 
+  /**
+   * Sets and persists the default personality.
+   * @param {Personalities} personality New default personality.
+   * @returns {void} No return value.
+   */
   public set defaultPersonality(personality: Personalities) {
     this._defaultPersonality = personality;
     this.saveSettings();
   }
 
+  /**
+   * Sets and persists the default reasoning mode.
+   * @param {OpenAIReasoningMode} reasoning New default reasoning mode.
+   * @returns {void} No return value.
+   */
   public set defaultReasoning(reasoning: OpenAIReasoningMode) {
     this._defaultReasoning = reasoning;
     this.saveSettings();
   }
 
+  /**
+   * Sets and persists the default model.
+   * @param {OpenAIModel} model New default model.
+   * @returns {void} No return value.
+   */
   public set defaultModel(model: OpenAIModel) {
     this._defaultModel = model;
     this.saveSettings();
   }
 
+  /**
+   * Sets and persists the git safety mode.
+   * @param {"safe" | "unsafe"} mode New git mode.
+   * @returns {void} No return value.
+   */
   public set gitMode(mode: "safe" | "unsafe") {
     this._gitMode = mode;
     this.saveSettings();
   }
 
+  /**
+   * Sets and persists the script execution safety mode.
+   * @param {"safe" | "unsafe"} mode New script mode.
+   * @returns {void} No return value.
+   */
   public set scriptMode(mode: "safe" | "unsafe") {
     this._scriptMode = mode;
     this.saveSettings();
   }
 
+  /**
+   * Reloads settings values from disk for the requested profile.
+   * @param {string} [configName=this._configName] Settings profile name to load.
+   * @returns {void} No return value.
+   */
   public loadSettings(configName: string = this._configName): void {
     const configPath = Settings.getConfigPath(configName);
 
@@ -289,6 +409,10 @@ export class Settings {
     this._agentSettings = config.agents;
   }
 
+  /**
+   * Persists the current in-memory settings to the active profile file.
+   * @returns {void} No return value.
+   */
   public saveSettings(): void {
     if (this._configName === "system_default") {
       throw new Error("cannot save system_default settings");
@@ -323,6 +447,10 @@ export class Settings {
     );
   }
 
+  /**
+   * Restores `user_default` settings from `system_default` values and reloads them.
+   * @returns {void} No return value.
+   */
   public revertToDefaults(): void {
     const systemConfigPath = Settings.getConfigPath("system_default");
     const userConfigPath = Settings.getConfigPath("user_default");
@@ -348,6 +476,12 @@ export class Settings {
     this.loadSettings("user_default");
   }
 
+  /**
+   * Adds or removes an entry from the protected object list and persists settings.
+   * @param {AddRemoveOperation} operation Change operation (`add` or `remove`).
+   * @param {string | FileSystemObject} [pathOrObject] Path or object entry to change.
+   * @returns {void} No return value.
+   */
   public setProtectedObjects(
     operation: AddRemoveOperation,
     pathOrObject?: string | FileSystemObject,
@@ -356,6 +490,12 @@ export class Settings {
     this.saveSettings();
   }
 
+  /**
+   * Adds or removes an entry from the concealed object list and persists settings.
+   * @param {AddRemoveOperation} operation Change operation (`add` or `remove`).
+   * @param {string | FileSystemObject} [pathOrObject] Path or object entry to change.
+   * @returns {void} No return value.
+   */
   public setConcealedObjects(
     operation: AddRemoveOperation,
     pathOrObject?: string | FileSystemObject,
@@ -364,6 +504,15 @@ export class Settings {
     this.saveSettings();
   }
 
+  /**
+   * Updates one editable agent setting for a mode/agent pair and persists settings.
+   * @param {AgentMode} mode Agent mode group containing the target agent.
+   * @param {string} agentName Agent key within the mode group.
+   * @param {AgentEditableSetting} setting Setting field to update.
+   * @param {Personalities | OpenAIReasoningMode | OpenAIModel | string} value New setting value.
+   * @param {AddRemoveOperation} [operation] Required for permission list edits.
+   * @returns {void} No return value.
+   */
   public setAgentSetting(
     mode: AgentMode,
     agentName: string,
@@ -413,10 +562,20 @@ export class Settings {
     this.saveSettings();
   }
 
+  /**
+   * Builds the absolute path to a settings file for a profile name.
+   * @param {string} configName Settings profile name.
+   * @returns {string} Absolute path to the profile file.
+   */
   private static getConfigPath(configName: string): string {
     return path.join(this.settingsDir, `${configName}.config.json`);
   }
 
+  /**
+   * Reads and normalizes a raw settings JSON file into internal camelCase shape.
+   * @param {string} configPath Absolute path to the settings file.
+   * @returns {SettingsFile} Normalized settings object.
+   */
   private static readSettingsFile(configPath: string): SettingsFile {
     const raw = fs.readFileSync(configPath, "utf-8");
     const parsed = JSON.parse(raw) as RawSettingsFile;
@@ -434,6 +593,11 @@ export class Settings {
     };
   }
 
+  /**
+   * Converts internal settings shape into the raw persisted snake_case structure.
+   * @param {SettingsFile} config Internal settings object.
+   * @returns {RawSettingsFile} Raw JSON-serializable settings payload.
+   */
   private static toRawSettingsFile(config: SettingsFile): RawSettingsFile {
     return {
       name: config.name,
@@ -448,6 +612,13 @@ export class Settings {
     };
   }
 
+  /**
+   * Mutates an object list by adding or removing a path/object entry.
+   * @param {FileSystemObject[]} target Target list to update.
+   * @param {AddRemoveOperation} operation Change operation (`add` or `remove`).
+   * @param {string | FileSystemObject} [pathOrObject] Path string or object entry to update.
+   * @returns {void} No return value.
+   */
   private updateObjectList(
     target: FileSystemObject[],
     operation: AddRemoveOperation,

@@ -18,14 +18,6 @@ export interface AgentExampleParams {
   tools: Tool[];
 }
 
-// `runTool` contract (implementation intentionally omitted):
-// - Input:
-//   - `toolName`: name of the function tool to run
-//   - `toolArguments`: parsed JSON arguments
-//   - `toolCall`: original tool call item from the model
-//   - `tools`: full list of tool definitions provided to the model
-// - Return:
-//   - The tool output as a string, which will be sent as a `function_call_output` item.
 export interface RunToolParams {
   toolName: string;
   toolArguments: unknown;
@@ -33,8 +25,24 @@ export interface RunToolParams {
   tools: Tool[];
 }
 
+/**
+ * Executes a model-requested function tool call.
+ *
+ * @param {RunToolParams} params Tool execution inputs.
+ * @param {string} params.toolName Name of the function tool to execute.
+ * @param {unknown} params.toolArguments Parsed JSON arguments for the tool call.
+ * @param {ResponseFunctionToolCall} params.toolCall Original tool call item returned by the model.
+ * @param {Tool[]} params.tools Complete tool definitions available to the model.
+ * @returns {Promise<string>} Tool output text to send back as a `function_call_output` item.
+ */
 declare function runTool(params: RunToolParams): Promise<string>;
 
+/**
+ * Narrows a generic response output item to a function-tool call item.
+ *
+ * @param {ResponseOutputItem} item A single output item from the Responses API.
+ * @returns {item is ResponseFunctionToolCall} `true` when the item is a function call.
+ */
 function isFunctionToolCall(item: ResponseOutputItem): item is ResponseFunctionToolCall {
   return item.type === "function_call";
 }
@@ -47,6 +55,21 @@ export interface RunAgentParams {
   tools: Tool[];
 }
 
+/**
+ * Runs a tool-capable agent loop using the Responses API.
+ *
+ * The loop continues until the model returns final text without pending function
+ * calls. Function calls are executed via `runTool`, then their outputs are fed
+ * back into `history` for the next iteration.
+ *
+ * @param {RunAgentParams} params Agent execution inputs.
+ * @param {OpenAI} params.client OpenAI client instance used for API requests.
+ * @param {string} params.model Model name to call.
+ * @param {Exclude<ReasoningEffort, null>} params.reasoning Reasoning effort sent to the model.
+ * @param {ResponseInput} params.history Mutable conversation history used as model input.
+ * @param {Tool[]} params.tools Available function/tool definitions.
+ * @returns {Promise<string>} The final assistant text response.
+ */
 export async function runAgent({
   client,
   model,

@@ -113,7 +113,17 @@ const SETTINGS_DIR = process.env.SETTINGS_DIR
   ? path.resolve(process.env.SETTINGS_DIR)
   : path.resolve(__dirname, "..", "settings");
 
+/**
+ * Executes parsed REPL slash commands and applies validated changes to
+ * interactive mode state and persisted settings profiles.
+ */
 export class ReplExecutor {
+  /**
+   * Executes a parsed slash command against the current REPL state.
+   * @param command Parsed command name, positional arguments, and flags.
+   * @param state Mutable REPL runtime state, including active mode and settings.
+   * @returns A user-facing status or error message for the command result.
+   */
   public execute(command: ParsedCommand, state: ReplState): string {
     try {
       switch (command.name) {
@@ -161,6 +171,10 @@ export class ReplExecutor {
     }
   }
 
+  /**
+   * Builds a summary list of all supported slash commands.
+   * @returns A newline-delimited help string describing each command.
+   */
   private executeHelp(): string {
     const lines = Object.keys(COMMAND_SUMMARIES).map(
       (name) => `/${name} - ${COMMAND_SUMMARIES[name]}`,
@@ -168,6 +182,11 @@ export class ReplExecutor {
     return lines.join("\n");
   }
 
+  /**
+   * Shows detailed usage text for a specific command.
+   * @param command Parsed `/describe` command with the target command name.
+   * @returns Detailed help text or a usage/validation error message.
+   */
   private executeDescribe(command: ParsedCommand): string {
     if (command.args.length !== 1 || command.flags.size > 0) {
       return "Usage: /describe <command>";
@@ -185,6 +204,12 @@ export class ReplExecutor {
     return detail;
   }
 
+  /**
+   * Lists configured agents and their effective runtime settings.
+   * @param command Parsed `/agents` command, optionally scoped to one mode.
+   * @param state Current REPL state containing loaded settings.
+   * @returns A formatted list of agents or a usage/validation error message.
+   */
   private executeAgents(command: ParsedCommand, state: ReplState): string {
     if (command.flags.size > 0) {
       return "Usage: /agents [<mode>]";
@@ -226,6 +251,12 @@ export class ReplExecutor {
     return lines.join("\n");
   }
 
+  /**
+   * Updates a default model or a model override for a specific agent.
+   * @param command Parsed `/model` command arguments and optional profile flag.
+   * @param state Current REPL state used to resolve and reload settings.
+   * @returns A success string or a usage/validation error message.
+   */
   private executeModel(command: ParsedCommand, state: ReplState): string {
     const parsedProfile = this.readOptionalProfileFlag(command, "Usage: /model <model> | /model <agent_id> <model>");
     if ("error" in parsedProfile) {
@@ -278,6 +309,12 @@ export class ReplExecutor {
     return `Set model for ${resolvedAgent.mode}.${resolvedAgent.agentName} to ${model} on profile "${target.name}".`;
   }
 
+  /**
+   * Updates a default reasoning mode or an agent reasoning override.
+   * @param command Parsed `/reasoning` command arguments and optional profile flag.
+   * @param state Current REPL state used to resolve and reload settings.
+   * @returns A success string or a usage/validation error message.
+   */
   private executeReasoning(command: ParsedCommand, state: ReplState): string {
     const parsedProfile = this.readOptionalProfileFlag(
       command,
@@ -333,6 +370,12 @@ export class ReplExecutor {
     return `Set reasoning for ${resolvedAgent.mode}.${resolvedAgent.agentName} to ${reasoning} on profile "${target.name}".`;
   }
 
+  /**
+   * Lists personalities or updates default/agent personality settings.
+   * @param command Parsed `/personality` command arguments and flags.
+   * @param state Current REPL state used to resolve and reload settings.
+   * @returns A success string, personality list, or usage/validation error message.
+   */
   private executePersonality(command: ParsedCommand, state: ReplState): string {
     const allowedFlags = new Set(["profile", "list"]);
     for (const flagName of command.flags.keys()) {
@@ -403,6 +446,12 @@ export class ReplExecutor {
     return `Set personality for ${resolvedAgent.mode}.${resolvedAgent.agentName} to ${personality} on profile "${target.name}".`;
   }
 
+  /**
+   * Dispatches `/config` subcommands to the appropriate handler.
+   * @param command Parsed `/config` command and subcommand arguments.
+   * @param state Current REPL state used by config operations.
+   * @returns The result from the selected config subcommand handler.
+   */
   private executeConfig(command: ParsedCommand, state: ReplState): string {
     if (command.args.length === 0) {
       return "Usage: /config <list|show|use|create|delete|set|revert> ...";
@@ -429,6 +478,11 @@ export class ReplExecutor {
     }
   }
 
+  /**
+   * Triggers the one-off test workflow placeholder command.
+   * @param command Parsed `/test` command, optional prompt, and flags.
+   * @returns A placeholder execution message or usage error.
+   */
   private executeTest(command: ParsedCommand): string {
     if (command.flags.size > 0) {
       for (const [flagName, flagValue] of command.flags.entries()) {
@@ -445,6 +499,12 @@ export class ReplExecutor {
     return "Test workflow triggered (placeholder).";
   }
 
+  /**
+   * Sets git safety mode for the active profile.
+   * @param command Parsed `/git` command flags.
+   * @param state Current REPL state whose git mode is updated.
+   * @returns A success string or usage/validation error message.
+   */
   private executeGit(command: ParsedCommand, state: ReplState): string {
     if (command.args.length > 0) {
       return "Usage: /git --safe | /git --unsafe";
@@ -460,6 +520,12 @@ export class ReplExecutor {
     return `Set git_mode=${state.settings.gitMode} on profile "${state.settings.configName}".`;
   }
 
+  /**
+   * Sets script safety mode for the active profile.
+   * @param command Parsed `/script` command flags.
+   * @param state Current REPL state whose script mode is updated.
+   * @returns A success string or usage/validation error message.
+   */
   private executeScript(command: ParsedCommand, state: ReplState): string {
     if (command.args.length > 0) {
       return "Usage: /script --safe | /script --unsafe";
@@ -475,14 +541,33 @@ export class ReplExecutor {
     return `Set script_mode=${state.settings.scriptMode} on profile "${state.settings.configName}".`;
   }
 
+  /**
+   * Handles `/protect` operations for protected filesystem objects.
+   * @param command Parsed `/protect` command arguments and flags.
+   * @param state Current REPL state used for settings updates.
+   * @returns A success string, listing output, or usage/validation error message.
+   */
   private executeProtect(command: ParsedCommand, state: ReplState): string {
     return this.executeObjectListCommand(command, state, "protected");
   }
 
+  /**
+   * Handles `/conceal` operations for concealed filesystem objects.
+   * @param command Parsed `/conceal` command arguments and flags.
+   * @param state Current REPL state used for settings updates.
+   * @returns A success string, listing output, or usage/validation error message.
+   */
   private executeConceal(command: ParsedCommand, state: ReplState): string {
     return this.executeObjectListCommand(command, state, "concealed");
   }
 
+  /**
+   * Adds, removes, or lists protected/concealed filesystem objects.
+   * @param command Parsed object-list command arguments and flags.
+   * @param state Current REPL state whose object lists may be mutated.
+   * @param target Selects whether protected or concealed objects are managed.
+   * @returns A success string, listing output, or usage/validation error message.
+   */
   private executeObjectListCommand(
     command: ParsedCommand,
     state: ReplState,
@@ -554,6 +639,12 @@ export class ReplExecutor {
     return `${verb} ${target} object: ${pathValue}`;
   }
 
+  /**
+   * Lists available configuration profile names.
+   * @param command Parsed `/config list` command.
+   * @param state Current REPL state used to mark the active profile.
+   * @returns A newline-delimited profile list or usage error.
+   */
   private configList(command: ParsedCommand, state: ReplState): string {
     if (command.args.length !== 1 || command.flags.size > 0) {
       return "Usage: /config list";
@@ -567,6 +658,12 @@ export class ReplExecutor {
     return lines.join("\n");
   }
 
+  /**
+   * Displays raw JSON for the active, default, or named config profile.
+   * @param command Parsed `/config show` command arguments.
+   * @param state Current REPL state used to resolve the active profile.
+   * @returns Pretty-printed JSON or a usage/profile error message.
+   */
   private configShow(command: ParsedCommand, state: ReplState): string {
     if (command.flags.size > 0) {
       return "Usage: /config show [default|named <name>]";
@@ -603,6 +700,12 @@ export class ReplExecutor {
     return "Usage: /config show [default|named <name>]";
   }
 
+  /**
+   * Switches the active profile to a named configuration.
+   * @param command Parsed `/config use` command arguments.
+   * @param state Current REPL state whose active settings are reloaded.
+   * @returns A success string or usage/profile validation error.
+   */
   private configUse(command: ParsedCommand, state: ReplState): string {
     if (command.args.length !== 2 || command.flags.size > 0) {
       return "Usage: /config use <name>";
@@ -621,6 +724,11 @@ export class ReplExecutor {
     }
   }
 
+  /**
+   * Creates a new named profile from a source profile.
+   * @param command Parsed `/config create` command arguments and flags.
+   * @returns A success string or usage/profile validation error.
+   */
   private configCreate(command: ParsedCommand): string {
     if (command.args.length !== 3 || command.args[1] !== "named") {
       return "Usage: /config create named <name> [--from default|<source_name>]";
@@ -665,6 +773,12 @@ export class ReplExecutor {
     return `Created profile "${profileName}" from "${sourceName}".`;
   }
 
+  /**
+   * Deletes a named profile and falls back to user default if it was active.
+   * @param command Parsed `/config delete` command arguments.
+   * @param state Current REPL state used to reload active settings if needed.
+   * @returns A success string or usage/profile validation error.
+   */
   private configDelete(command: ParsedCommand, state: ReplState): string {
     if (command.args.length !== 3 || command.args[1] !== "named" || command.flags.size > 0) {
       return "Usage: /config delete named <name>";
@@ -691,6 +805,12 @@ export class ReplExecutor {
     return `Deleted profile "${profileName}".`;
   }
 
+  /**
+   * Applies a targeted field update to a default or named profile.
+   * @param command Parsed `/config set` command arguments and flags.
+   * @param state Current REPL state used to reload active settings if changed.
+   * @returns A success string or usage/validation error.
+   */
   private configSet(command: ParsedCommand, state: ReplState): string {
     const parseTarget = this.parseConfigTypeAndName(command.args, 1);
     if ("error" in parseTarget) {
@@ -745,6 +865,12 @@ export class ReplExecutor {
     return `Updated "${field}" on profile "${parseTarget.profileName}".`;
   }
 
+  /**
+   * Reverts an entire profile or one field from `system_default`.
+   * @param command Parsed `/config revert` command arguments and flags.
+   * @param state Current REPL state used to reload active settings if changed.
+   * @returns A success string or usage/validation error.
+   */
   private configRevert(command: ParsedCommand, state: ReplState): string {
     const parseTarget = this.parseConfigTypeAndName(command.args, 1);
     if ("error" in parseTarget) {
@@ -800,6 +926,14 @@ export class ReplExecutor {
     return `Reverted field "${fieldFlag}" on profile "${parseTarget.profileName}" from system_default.`;
   }
 
+  /**
+   * Applies a `config set` field mutation to a Settings instance.
+   * @param settings Target settings object to mutate.
+   * @param field Canonical field path being updated.
+   * @param value Input value string for the update.
+   * @param operation Optional add/remove operation for list-like fields.
+   * @returns `{ ok: true }` on success or `{ error }` when validation fails.
+   */
   private applyConfigSetField(
     settings: Settings,
     field: string,
@@ -944,6 +1078,11 @@ export class ReplExecutor {
     return { error: `Invalid field "${field}". Use /describe config for supported fields.` };
   }
 
+  /**
+   * Parses a protected/concealed value as either a raw path or JSON-like object.
+   * @param value Input value from CLI flags.
+   * @returns Parsed path/object value or a validation error.
+   */
   private parsePathOrObjectValue(
     value: string,
   ): { value: string | FileSystemObject } | { error: string } {
@@ -981,6 +1120,11 @@ export class ReplExecutor {
     return { value: parsedJson.path };
   }
 
+  /**
+   * Parses an `agents.<mode>.<agent>.<setting>` field selector.
+   * @param field Dot-delimited field path string.
+   * @returns Parsed agent field metadata or an error result.
+   */
   private parseAgentField(field: string):
     | {
         mode: AgentMode;
@@ -1001,6 +1145,13 @@ export class ReplExecutor {
     };
   }
 
+  /**
+   * Copies a supported field from one raw settings object to another.
+   * @param target Destination raw settings data to mutate.
+   * @param source Source raw settings data to read from.
+   * @param field Field name/path to copy.
+   * @returns `{ ok: true }` when copied, otherwise an `{ error }` result.
+   */
   private copyFieldFromSource(
     target: RawSettingsFile,
     source: RawSettingsFile,
@@ -1064,6 +1215,12 @@ export class ReplExecutor {
     return { ok: true };
   }
 
+  /**
+   * Resolves an agent identifier (`<agent>` or `<mode>.<agent>`) to a unique agent.
+   * @param identifier Agent selector string from command arguments.
+   * @param settings Settings used to validate and resolve the identifier.
+   * @returns Resolved mode/name pair or an error for invalid/ambiguous identifiers.
+   */
   private resolveAgentIdentifier(
     identifier: string,
     settings: Settings,
@@ -1103,6 +1260,12 @@ export class ReplExecutor {
     return uniqueMatch;
   }
 
+  /**
+   * Reads and validates an optional `--profile` flag.
+   * @param command Parsed command that may include `--profile`.
+   * @param usage Usage string returned when validation fails.
+   * @returns Optional profile name or an error result.
+   */
   private readOptionalProfileFlag(
     command: ParsedCommand,
     usage: string,
@@ -1129,6 +1292,12 @@ export class ReplExecutor {
     return { profileName: profileFlag };
   }
 
+  /**
+   * Resolves the mutable settings target for a command.
+   * @param state Current REPL state and active settings profile.
+   * @param profileName Optional explicit profile override.
+   * @returns Target profile name and settings instance, or an error result.
+   */
   private resolveTargetSettings(
     state: ReplState,
     profileName?: string,
@@ -1144,6 +1313,11 @@ export class ReplExecutor {
     return { name: profileName, settings: loaded.settings };
   }
 
+  /**
+   * Loads a profile into a new Settings instance.
+   * @param profileName Profile name to load.
+   * @returns Loaded settings instance or a profile-not-found error.
+   */
   private loadSettingsProfile(profileName: string): { settings: Settings } | { error: string } {
     try {
       return { settings: Settings.fromSettingsFile(profileName) };
@@ -1152,6 +1326,12 @@ export class ReplExecutor {
     }
   }
 
+  /**
+   * Parses the `<type> [<name>]` config target syntax.
+   * @param args Full command argument list.
+   * @param startIndex Index where the type token starts.
+   * @returns Parsed profile target and next argument index, or an error.
+   */
   private parseConfigTypeAndName(
     args: string[],
     startIndex: number,
@@ -1172,6 +1352,11 @@ export class ReplExecutor {
     return { error: `Invalid config type "${String(configType)}". Accepted values: default, named` };
   }
 
+  /**
+   * Parses mutually exclusive `--add`/`--remove` flags.
+   * @param flags Parsed command flags map.
+   * @returns Optional add/remove operation, or a validation error.
+   */
   private getAddRemoveOperation(
     flags: Map<string, string | true>,
   ): { operation?: AddRemoveOperation } | { error: string } {
@@ -1197,6 +1382,10 @@ export class ReplExecutor {
     return {};
   }
 
+  /**
+   * Enumerates available profile names from disk.
+   * @returns Sorted config profile names without file extensions.
+   */
   private listConfigNames(): string[] {
     if (!fs.existsSync(SETTINGS_DIR)) {
       return [];
@@ -1209,6 +1398,11 @@ export class ReplExecutor {
     return files.map((fileName) => fileName.replace(/\.config\.json$/, ""));
   }
 
+  /**
+   * Reads and parses a raw settings JSON file.
+   * @param configName Profile name to read.
+   * @returns Parsed raw settings data or a profile-not-found error.
+   */
   private readRawSettings(configName: string): { data: RawSettingsFile } | { error: string } {
     const configPath = this.configPath(configName);
     if (!fs.existsSync(configPath)) {
@@ -1218,6 +1412,11 @@ export class ReplExecutor {
     return { data: JSON.parse(raw) as RawSettingsFile };
   }
 
+  /**
+   * Writes raw settings JSON to disk for a profile.
+   * @param settings Raw settings payload to persist.
+   * @returns Nothing.
+   */
   private writeRawSettings(settings: RawSettingsFile): void {
     fs.mkdirSync(SETTINGS_DIR, { recursive: true });
     fs.writeFileSync(
@@ -1227,16 +1426,32 @@ export class ReplExecutor {
     );
   }
 
+  /**
+   * Builds the absolute file path for a config profile.
+   * @param configName Profile name.
+   * @returns Absolute path to `<name>.config.json`.
+   */
   private configPath(configName: string): string {
     return path.join(SETTINGS_DIR, `${configName}.config.json`);
   }
 
+  /**
+   * Reloads active settings if a write affected the currently selected profile.
+   * @param profileName Profile that was modified.
+   * @param state Current REPL state containing active settings.
+   * @returns Nothing.
+   */
   private reloadActiveSettingsIfNeeded(profileName: string, state: ReplState): void {
     if (state.settings.configName === profileName) {
       state.settings.loadSettings(profileName);
     }
   }
 
+  /**
+   * Normalizes unknown thrown values into a string message.
+   * @param error Unknown thrown value.
+   * @returns Best-effort error message string.
+   */
   private toErrorMessage(error: unknown): string {
     if (error instanceof Error) {
       return error.message;
@@ -1244,30 +1459,65 @@ export class ReplExecutor {
     return String(error);
   }
 
+  /**
+   * Type guard for supported agent modes.
+   * @param value Input string to validate.
+   * @returns `true` when the value is a valid `AgentMode`.
+   */
   private isMode(value: string): value is AgentMode {
     return MODES.includes(value as AgentMode);
   }
 
+  /**
+   * Type guard for supported model identifiers.
+   * @param value Input string to validate.
+   * @returns `true` when the value is a valid `OpenAIModel`.
+   */
   private isModel(value: string): value is OpenAIModel {
     return MODELS.includes(value as OpenAIModel);
   }
 
+  /**
+   * Type guard for supported reasoning levels.
+   * @param value Input string to validate.
+   * @returns `true` when the value is a valid `OpenAIReasoningMode`.
+   */
   private isReasoning(value: string): value is OpenAIReasoningMode {
     return REASONING.includes(value as OpenAIReasoningMode);
   }
 
+  /**
+   * Type guard for supported personality identifiers.
+   * @param value Input string to validate.
+   * @returns `true` when the value is a valid `Personalities`.
+   */
   private isPersonality(value: string): value is Personalities {
     return PERSONALITIES.includes(value as Personalities);
   }
 
+  /**
+   * Type guard for supported safety modes.
+   * @param value Input string to validate.
+   * @returns `true` when the value is a valid `SafetyMode`.
+   */
   private isSafetyMode(value: string): value is SafetyMode {
     return SAFETY_MODES.includes(value as SafetyMode);
   }
 
+  /**
+   * Type guard for supported filesystem object types.
+   * @param value Input string to validate.
+   * @returns `true` when the value is `file` or `directory`.
+   */
   private isFileType(value: string): value is "file" | "directory" {
     return FILE_TYPES.includes(value as "file" | "directory");
   }
 
+  /**
+   * Type guard for supported agent permission tokens.
+   * @param value Input string to validate.
+   * @returns `true` when the value is a valid permission token.
+   */
   private isPermission(value: string): value is PermissionToken {
     return PERMISSIONS.includes(value as PermissionToken);
   }

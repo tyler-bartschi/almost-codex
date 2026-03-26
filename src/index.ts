@@ -7,6 +7,12 @@ import { ReplParser } from "./repl/replParser";
 
 dotenv.config();
 
+/**
+ * Creates a configured OpenAI client from environment variables.
+ *
+ * @returns {OpenAI} An initialized OpenAI API client.
+ * @throws {Error} Thrown when `OPENAI_API_KEY` is not defined.
+ */
 function createOpenAIClient(): OpenAI {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -16,6 +22,11 @@ function createOpenAIClient(): OpenAI {
   return new OpenAI({ apiKey });
 }
 
+/**
+ * Builds the initial REPL runtime state used by the CLI loop.
+ *
+ * @returns {ReplState} The initial state, including settings and current mode.
+ */
 function createInitialState(): ReplState {
   const settings = Settings.fromSettingsFile("user_default");
   const currentMode: AgentMode = "code";
@@ -25,6 +36,14 @@ function createInitialState(): ReplState {
   };
 }
 
+/**
+ * Starts the interactive REPL loop.
+ *
+ * Uses `ReplParser` to parse user input into commands and `ReplExecutor` to
+ * execute parsed commands against the shared `ReplState`.
+ *
+ * @returns {void} This function does not return; it runs until process exit.
+ */
 export function main(): void {
   const client = createOpenAIClient();
   // void client;

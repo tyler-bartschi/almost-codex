@@ -11,7 +11,17 @@ export type ReplParseResult =
   | { kind: "command"; command: ParsedCommand }
   | { kind: "error"; message: string };
 
+/**
+ * Parses REPL input lines into typed results, including plain text messages,
+ * slash commands, and parser-level errors.
+ */
 export class ReplParser {
+  /**
+   * Parses a single line of REPL input into an empty, text, command, or error result.
+   *
+   * @param line Raw line entered by the user.
+   * @returns A `ReplParseResult` describing how the input should be handled.
+   */
   public parse(line: string): ReplParseResult {
     const trimmed = line.trim();
     if (trimmed.length === 0) {
@@ -61,6 +71,12 @@ export class ReplParser {
     };
   }
 
+  /**
+   * Splits post-command tokens into positional arguments and `--flag` entries.
+   *
+   * @param tokens Command tokens after the command name token.
+   * @returns Parsed args and flags, or an error when a flag is malformed.
+   */
   private parseFlags(tokens: string[]): { args: string[]; flags: Map<string, string | true> } | { error: string } {
     const args: string[] = [];
     const flags = new Map<string, string | true>();
@@ -92,6 +108,13 @@ export class ReplParser {
     return { args, flags };
   }
 
+  /**
+   * Tokenizes command input, supporting whitespace separation, double-quoted
+   * values, and backslash escaping.
+   *
+   * @param input Trimmed command input string.
+   * @returns Token list on success, or an error for unterminated quotes.
+   */
   private tokenize(input: string): { tokens: string[] } | { error: string } {
     const tokens: string[] = [];
     let current = "";
