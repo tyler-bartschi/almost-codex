@@ -80,6 +80,18 @@ If a bare `<agent>` is ambiguous, command must fail and ask for `<mode>.<agent>`
 - Flags: none
 - Behavior: show detailed usage, accepted values, examples, and error cases for that command.
 
+## `/clear`
+- Syntax: `/clear`
+- Args: none
+- Flags: none
+- Behavior: clear terminal output and redraw the interactive prompt at the top.
+
+## `/quit` (`/exit`)
+- Syntax:
+- `/quit`
+- `/exit`
+- Behavior: end the interactive REPL loop and terminate the CLI process.
+
 ## `/agents`
 - Syntax:
 - `/agents`

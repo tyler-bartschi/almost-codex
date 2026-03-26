@@ -1,0 +1,99 @@
+{
+  "name": "test",
+  "default_personality": "efficient",
+  "default_reasoning": "medium",
+  "default_model": "gpt-5-nano",
+  "git_mode": "safe",
+  "script_mode": "safe",
+  "agents": {
+    "ask": {
+      "chat": {
+        "description": "A chat agent to ask questions about your codebase to, only has permission to write files",
+        "personality": "default",
+        "reasoning": "default",
+        "model": "default",
+        "permissions": ["read"]
+      }
+    },
+    "code": {
+      "orchestrator": {
+        "description": "A chat agent that will orchestrate other agents to accomplish your coding directives",
+        "personality": "default",
+        "reasoning": "default",
+        "model": "default",
+        "permissions": ["read", "spawn_agent"]
+      },
+      "planner": {
+        "description": "Plans the necessary steps to fully accomplish the vision set out by the orchestrator",
+        "personality": "default",
+        "reasoning": "default",
+        "model": "default",
+        "permissions": ["read"]
+      },
+      "executor": {
+        "description": "Executes the steps or goal provided by an orchestrator or planner, and writes code",
+        "personality": "default",
+        "reasoning": "default",
+        "model": "default",
+        "permissions": ["read", "write", "scripts"]
+      }
+    },
+    "plan": {
+      "chat": {
+        "description": "A chat agent to speak with about planning a code base or task",
+        "personality": "default",
+        "reasoning": "default",
+        "model": "default",
+        "permissions": ["read", "spawn_agent"]
+      },
+      "step_generator": {
+        "description": "Generates steps to fulfill a given task",
+        "personality": "default",
+        "reasoning": "default",
+        "model": "default",
+        "permissions": ["read"]
+      },
+      "expander": {
+        "description": "Expands upon the steps provided by a step_generator for more detail and accuracy",
+        "personality": "default",
+        "reasoning": "default",
+        "model": "default",
+        "permissions": ["read"]
+      },
+      "synthesizer": {
+        "description": "Synthesizes information from all planning agents and can write that information to a file, if desired by the user",
+        "personality": "default",
+        "reasoning": "default",
+        "model": "default",
+        "permissions": ["read", "write"]
+      }
+    },
+    "test": {
+      "tester": {
+        "description": "An agent that will run the tests in your codebase and interpret the results for you",
+        "personality": "default",
+        "reasoning": "default",
+        "model": "default",
+        "permissions": ["read"]
+      }
+    },
+    "document": {
+      "chat": {
+        "description": "A chat agent to speak with about documenting your code",
+        "personality": "default",
+        "reasoning": "default",
+        "model": "default",
+        "permissions": ["read", "spawn_agent"]
+      },
+      "documenter": {
+        "description": "Adds documentation to your codebase",
+        "personality": "default",
+        "reasoning": "default",
+        "model": "default",
+        "permissions": ["read", "write"]
+      }
+    }
+  },
+  "protected": [],
+  "concealed": []
+}

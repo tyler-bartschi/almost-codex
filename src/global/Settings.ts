@@ -640,11 +640,11 @@ export class Settings {
       return;
     }
 
-    const objectIndex = target.findIndex((existing) =>
-      existing.equals(objectToChange),
-    );
-    if (objectIndex >= 0) {
-      target.splice(objectIndex, 1);
+    for (let index = target.length - 1; index >= 0; index -= 1) {
+      const existing = target[index];
+      if (existing !== undefined && existing.path === objectToChange.path) {
+        target.splice(index, 1);
+      }
     }
   }
 }

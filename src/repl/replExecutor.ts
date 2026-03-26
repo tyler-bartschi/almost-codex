@@ -37,6 +37,8 @@ interface RawSettingsFile {
 export interface ReplState {
   currentMode: AgentMode;
   settings: Settings;
+  shouldExit: boolean;
+  shouldClear: boolean;
 }
 
 const MODES: AgentMode[] = ["ask", "code", "plan", "test", "document"];
@@ -79,6 +81,8 @@ const COMMAND_SUMMARIES: Record<string, string> = {
   script: "Set script safety mode.",
   protect: "Manage protected filesystem objects.",
   conceal: "Manage concealed filesystem objects.",
+  clear: "Clear terminal output and redraw the prompt.",
+  quit: "Exit the REPL loop. Alias: /exit.",
 };
 
 const COMMAND_DETAILS: Record<string, string> = {
@@ -86,7 +90,7 @@ const COMMAND_DETAILS: Record<string, string> = {
   describe:
     "/describe <command>\nShows syntax, accepted values, and examples for a command.\nExample: /describe config",
   agents:
-    "/agents\n/agents <mode>\nModes: ask|code|plan|test|document\nLists agents with effective personality/reasoning/model values.",
+    "/agents\n/agents <mode>\nModes: ask|code|plan|test|document\nLists agents with effective personality, reasoning, model values.",
   model:
     "/model <model>\n/model <agent_id> <model>\n--profile <name> optional.\nModels: gpt-5, gpt-5-mini, gpt-5-nano, gpt-4.1, gpt-4.1-mini, gpt-4.1-nano, o3, o3-mini, o4-mini",
   reasoning:
@@ -107,11 +111,17 @@ const COMMAND_DETAILS: Record<string, string> = {
     "/protect <path> [--type file|directory]\n/protect --remove <path> [--type file|directory]\n/protect --list",
   conceal:
     "/conceal <path> [--type file|directory]\n/conceal --remove <path> [--type file|directory]\n/conceal --list",
+  clear: "/clear\nClears terminal output and redraws the prompt.",
+  quit: "/quit\n/exit\nExits the REPL.",
 };
 
 const SETTINGS_DIR = process.env.SETTINGS_DIR
   ? path.resolve(process.env.SETTINGS_DIR)
   : path.resolve(__dirname, "..", "settings");
+const ANSI_WHITE = "\u001b[37m";
+const ANSI_PURPLE = "\u001b[35m";
+const ANSI_BOLD = "\u001b[1m";
+const ANSI_RESET = "\u001b[0m";
 
 /**
  * Executes parsed REPL slash commands and applies validated changes to
@@ -163,6 +173,13 @@ export class ReplExecutor {
           return this.executeProtect(command, state);
         case "conceal":
           return this.executeConceal(command, state);
+        case "clear":
+          state.shouldClear = true;
+          return "";
+        case "quit":
+        case "exit":
+          state.shouldExit = true;
+          return "Exiting REPL.";
         default:
           return "Unknown command. Use /help.";
       }
@@ -177,7 +194,8 @@ export class ReplExecutor {
    */
   private executeHelp(): string {
     const lines = Object.keys(COMMAND_SUMMARIES).map(
-      (name) => `/${name} - ${COMMAND_SUMMARIES[name]}`,
+      (name) =>
+        `${ANSI_WHITE}${ANSI_PURPLE}/${name}${ANSI_WHITE} - ${COMMAND_SUMMARIES[name]}${ANSI_RESET}`,
     );
     return lines.join("\n");
   }
@@ -201,7 +219,21 @@ export class ReplExecutor {
     if (!detail) {
       return `Unknown command "${requested}". Use /help.`;
     }
-    return detail;
+    return this.colorizeCommandText(detail);
+  }
+
+  /**
+   * Colors slash-command tokens purple while keeping all non-command text white.
+   * @param text Arbitrary text that may include slash-command tokens.
+   * @returns ANSI-colored text for terminal rendering.
+   */
+  private colorizeCommandText(text: string): string {
+    const commandTokenPattern = /\/[a-z][a-z0-9_-]*/gi;
+    const colored = text.replace(
+      commandTokenPattern,
+      (token) => `${ANSI_PURPLE}${token}${ANSI_WHITE}`,
+    );
+    return `${ANSI_WHITE}${colored}${ANSI_RESET}`;
   }
 
   /**
@@ -226,9 +258,12 @@ export class ReplExecutor {
 
     const modes = filterMode !== undefined ? [filterMode] : MODES;
     const lines: string[] = [];
-    for (const mode of modes) {
+    for (const [index, mode] of modes.entries()) {
+      if (index > 0) {
+        lines.push("");
+      }
       const agents = state.settings.agentSettings[mode];
-      lines.push(`Mode: ${mode}`);
+      lines.push(`${ANSI_BOLD}Mode: ${this.displayModeName(mode)}${ANSI_RESET}`);
       for (const [agentName, agentSetting] of Object.entries(agents)) {
         const effectivePersonality =
           agentSetting.personality === "default"
@@ -242,13 +277,26 @@ export class ReplExecutor {
           agentSetting.model === "default"
             ? state.settings.defaultModel
             : agentSetting.model;
-        lines.push(
-          `${mode}.${agentName} | personality=${effectivePersonality} reasoning=${effectiveReasoning} model=${effectiveModel}`,
-        );
-        lines.push(`description: ${agentSetting.description}`);
+        lines.push(`  ${ANSI_PURPLE}${agentName}${ANSI_RESET}`);
+        lines.push(`    Description: ${agentSetting.description}`);
+        lines.push(`    Personality: ${effectivePersonality}`);
+        lines.push(`    Model: ${effectiveModel}`);
+        lines.push(`    Reasoning: ${effectiveReasoning}`);
       }
     }
     return lines.join("\n");
+  }
+
+  /**
+   * Converts internal mode identifiers into user-facing labels.
+   * @param mode Internal mode identifier.
+   * @returns Human-friendly mode label for display output.
+   */
+  private displayModeName(mode: AgentMode): string {
+    if (mode === "ask") {
+      return "Chat";
+    }
+    return `${mode.charAt(0).toUpperCase()}${mode.slice(1)}`;
   }
 
   /**
@@ -573,17 +621,23 @@ export class ReplExecutor {
     state: ReplState,
     target: "protected" | "concealed",
   ): string {
+    const usageAll = target === "protected"
+      ? "Usage: /protect <path> [--type file|directory] | /protect --remove <path> [--type file|directory] | /protect --list"
+      : "Usage: /conceal <path> [--type file|directory] | /conceal --remove <path> [--type file|directory] | /conceal --list";
+    const usageMutate = target === "protected"
+      ? "Usage: /protect <path> [--type file|directory] | /protect --remove <path> [--type file|directory]"
+      : "Usage: /conceal <path> [--type file|directory] | /conceal --remove <path> [--type file|directory]";
+
     const allowedFlags = new Set(["remove", "list", "type"]);
     for (const flagName of command.flags.keys()) {
       if (!allowedFlags.has(flagName)) {
-        return target === "protected"
-          ? "Usage: /protect <path> [--type file|directory] | /protect --remove <path> [--type file|directory] | /protect --list"
-          : "Usage: /conceal <path> [--type file|directory] | /conceal --remove <path> [--type file|directory] | /conceal --list";
+        return usageAll;
       }
     }
 
     const listFlag = command.flags.get("list") === true;
-    const removeFlag = command.flags.get("remove") === true;
+    const removeFlagValue = command.flags.get("remove");
+    const removeFlag = removeFlagValue !== undefined;
     const typeFlag = command.flags.get("type");
 
     if (listFlag) {
@@ -603,17 +657,22 @@ export class ReplExecutor {
       return objects.map((object) => `${object.path} (${object.type})`).join("\n");
     }
 
-    if (command.args.length !== 1) {
-      return target === "protected"
-        ? "Usage: /protect <path> [--type file|directory] | /protect --remove <path> [--type file|directory]"
-        : "Usage: /conceal <path> [--type file|directory] | /conceal --remove <path> [--type file|directory]";
+    if (removeFlagValue !== undefined && removeFlagValue !== true && command.args.length > 0) {
+      return usageMutate;
     }
 
-    const pathValue = command.args[0];
+    let pathValue: string | undefined;
+    if (removeFlagValue !== undefined && removeFlagValue !== true) {
+      pathValue = removeFlagValue;
+    } else {
+      if (command.args.length !== 1) {
+        return usageMutate;
+      }
+      pathValue = command.args[0];
+    }
+
     if (pathValue === undefined) {
-      return target === "protected"
-        ? "Usage: /protect <path> [--type file|directory] | /protect --remove <path> [--type file|directory]"
-        : "Usage: /conceal <path> [--type file|directory] | /conceal --remove <path> [--type file|directory]";
+      return usageMutate;
     }
     let fileObjectType: "file" | "directory" | undefined;
     if (typeFlag !== undefined) {
@@ -650,7 +709,7 @@ export class ReplExecutor {
       return "Usage: /config list";
     }
 
-    const names = this.listConfigNames();
+    const names = this.listConfigNames().filter((name) => name !== "system_default");
     const lines = names.map((name) => {
       const activeMarker = name === state.settings.configName ? " (active)" : "";
       return `${name}${activeMarker}`;

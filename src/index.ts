@@ -33,6 +33,8 @@ function createInitialState(): ReplState {
   return {
     currentMode,
     settings,
+    shouldExit: false,
+    shouldClear: false,
   };
 }
 
@@ -54,6 +56,8 @@ export function main(): void {
   const prompt = promptSync({ sigint: true });
 
   while (true) {
+    // note to agents: this console.log is intentional to provide a new line before every prompt. do not remove
+    console.log();
     const input = prompt(`[${state.currentMode}]> `);
     const parsed = parser.parse(input);
 
@@ -72,7 +76,20 @@ export function main(): void {
     }
 
     const output = executor.execute(parsed.command, state);
-    console.log(output);
+
+    if (state.shouldClear) {
+      process.stdout.write("\u001Bc");
+      state.shouldClear = false;
+      continue;
+    }
+
+    if (output.length > 0) {
+      console.log(output);
+    }
+
+    if (state.shouldExit) {
+      break;
+    }
   }
 }
 
