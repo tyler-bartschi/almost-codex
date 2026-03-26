@@ -21,6 +21,7 @@ This document defines the `/` commands for the CLI REPL, including arguments, ac
 
 Aliases:
 - `/chat` switches to `ask` mode.
+- `/ask` switches to `ask` mode.
 
 ### Personalities
 - `efficient`
@@ -129,6 +130,16 @@ If a bare `<agent>` is ambiguous, command must fail and ask for `<mode>.<agent>`
 - One value: set `default_reasoning`.
 - Agent + value: set target agent `reasoning` override.
 
+## `/status`
+- Syntax: `/status`
+- Args: none
+- Flags: none
+- Behavior:
+- Prints:
+- `Mode: <current mode>`
+- `Context window: yes`
+- `Weekly limit: however much you're willing to pay, its your api key`
+
 ## `/personality`
 - Syntax:
 - `/personality --list`
@@ -198,6 +209,10 @@ If a bare `<agent>` is ambiguous, command must fail and ask for `<mode>.<agent>`
 
 ## `/chat`
 - Syntax: `/chat`
+- Behavior: switch interactive mode to `ask`.
+
+## `/ask` (alias of `/chat`)
+- Syntax: `/ask`
 - Behavior: switch interactive mode to `ask`.
 
 ## `/plan`
