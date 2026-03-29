@@ -94,7 +94,7 @@ export function createFile(
  * @param {string} contents Text to append to the file.
  * @returns {string} The absolute modified file path.
  */
-export function appendtoFile(
+export function appendToFile(
   filePath: string,
   rootDir: string,
   protectedObjects: RestrictedObjectLike[],

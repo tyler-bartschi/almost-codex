@@ -63,9 +63,14 @@ export function readContext(
  * Recursively finds all files or directories whose base name matches the requested name.
  * @param {string} name File or directory name to match.
  * @param {string} rootDir Absolute root directory from which to search.
+ * @param {RestrictedObjectLike[]} concealedObjects Concealed filesystem objects that cannot be exposed.
  * @returns {string[]} Relative paths from the root directory for every matching filesystem object.
  */
-export function findLocation(name: string, rootDir: string): string[] {
+export function findLocation(
+  name: string,
+  rootDir: string,
+  concealedObjects: RestrictedObjectLike[],
+): string[] {
   const resolvedRootDir = resolvePathWithinRoot(".", rootDir);
 
   const matches: string[] = [];
@@ -80,6 +85,9 @@ export function findLocation(name: string, rootDir: string): string[] {
 
     for (const entry of directoryEntries) {
       const entryPath = path.join(currentDirectory, entry.name);
+      if (isRestrictedPath(entryPath, rootDir, concealedObjects)) {
+        continue;
+      }
 
       if (entry.name === name) {
         matches.push(path.relative(resolvedRootDir, entryPath));

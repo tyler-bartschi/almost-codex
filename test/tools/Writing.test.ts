@@ -4,7 +4,7 @@ import * as path from "path";
 import promptSync from "prompt-sync";
 import { FileSystemObject } from "../../src/global/Settings";
 import {
-  appendtoFile,
+  appendToFile,
   createDirectory,
   createFile,
   deleteDirectory,
@@ -70,7 +70,7 @@ describe("Writing tools", () => {
     const filePath = path.join(tempRoot, "log.txt");
     fs.writeFileSync(filePath, "first line", "utf-8");
 
-    const updatedPath = appendtoFile(filePath, tempRoot, [], [], "\nsecond line");
+    const updatedPath = appendToFile(filePath, tempRoot, [], [], "\nsecond line");
 
     expect(updatedPath).toBe(filePath);
     expect(fs.readFileSync(filePath, "utf-8")).toBe("first line\nsecond line");
@@ -125,7 +125,7 @@ describe("Writing tools", () => {
   it("rejects appending to a missing file within the root directory", () => {
     const missingPath = path.join(tempRoot, "missing.txt");
 
-    expect(() => appendtoFile(missingPath, tempRoot, [], [], "extra")).toThrow(
+    expect(() => appendToFile(missingPath, tempRoot, [], [], "extra")).toThrow(
       `Requested file or directory cannot be found: ${missingPath}`,
     );
   });
@@ -135,7 +135,7 @@ describe("Writing tools", () => {
     fs.writeFileSync(filePath, "locked", "utf-8");
 
     expect(() =>
-      appendtoFile(filePath, tempRoot, [new FileSystemObject(filePath, "file")], [], "blocked"),
+      appendToFile(filePath, tempRoot, [new FileSystemObject(filePath, "file")], [], "blocked"),
     ).toThrow(`Path is protected and cannot be written: ${filePath}`);
   });
 

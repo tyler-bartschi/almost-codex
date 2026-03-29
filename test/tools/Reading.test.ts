@@ -117,18 +117,35 @@ describe("Reading tools", () => {
     fs.writeFileSync(alphaExample, "alpha", "utf-8");
     fs.writeFileSync(betaExample, "beta", "utf-8");
 
-    expect(findLocation("example.md", tempRoot)).toEqual([
+    expect(findLocation("example.md", tempRoot, [])).toEqual([
       path.join("alpha", "example.md"),
       path.join("beta", "nested", "example.md"),
     ]);
-    expect(findLocation("src", tempRoot)).toEqual([
+    expect(findLocation("src", tempRoot, [])).toEqual([
       path.join("packages", "feature", "src"),
       "src",
     ]);
   });
 
+  it("does not return paths for concealed objects", () => {
+    const visibleExample = path.join(tempRoot, "alpha", "example.md");
+    const concealedDirectory = path.join(tempRoot, "beta", "nested");
+    const concealedExample = path.join(concealedDirectory, "example.md");
+
+    fs.mkdirSync(path.dirname(visibleExample), { recursive: true });
+    fs.mkdirSync(concealedDirectory, { recursive: true });
+    fs.writeFileSync(visibleExample, "visible", "utf-8");
+    fs.writeFileSync(concealedExample, "concealed", "utf-8");
+
+    expect(
+      findLocation("example.md", tempRoot, [
+        new FileSystemObject(path.join("beta", "nested"), "directory"),
+      ]),
+    ).toEqual([path.join("alpha", "example.md")]);
+  });
+
   it("rejects a findLocation request when no matching file or directory exists", () => {
-    expect(() => findLocation("missing.txt", tempRoot)).toThrow(
+    expect(() => findLocation("missing.txt", tempRoot, [])).toThrow(
       "Requested file or directory cannot be found: missing.txt",
     );
   });
