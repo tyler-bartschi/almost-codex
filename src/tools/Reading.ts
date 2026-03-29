@@ -34,6 +34,57 @@ export function readDirectory(directoryPath: string): string {
 }
 
 /**
+ * Lists the visible file tree beneath a root directory as a formatted string.
+ * @param {string} rootDir Absolute root directory from which access is allowed.
+ * @param {RestrictedObjectLike[]} concealedObjects Concealed filesystem objects that cannot be exposed.
+ * @returns {string} A formatted tree representation rooted at `rootDir`.
+ */
+export function listDirectoryTree(
+  rootDir: string,
+  concealedObjects: RestrictedObjectLike[],
+): string {
+  const resolvedRootDir = resolvePathWithinRoot(".", rootDir);
+  const treeLines = [`${path.basename(resolvedRootDir) || resolvedRootDir}/`];
+
+  /**
+   * Appends visible descendants for the current directory to the tree output.
+   * @param {string} currentDirectory Directory currently being traversed.
+   * @param {string} prefix Prefix used to align nested tree branches.
+   * @returns {void} No return value.
+   */
+  function walk(currentDirectory: string, prefix: string): void {
+    const visibleEntries = fs
+      .readdirSync(currentDirectory, { withFileTypes: true })
+      .filter((entry) => !isRestrictedPath(path.join(currentDirectory, entry.name), rootDir, concealedObjects))
+      .sort((leftEntry, rightEntry) => {
+        if (leftEntry.isDirectory() !== rightEntry.isDirectory()) {
+          return leftEntry.isDirectory() ? -1 : 1;
+        }
+
+        return leftEntry.name.localeCompare(rightEntry.name);
+      });
+
+    visibleEntries.forEach((entry, index) => {
+      const entryPath = path.join(currentDirectory, entry.name);
+      const isLastEntry = index === visibleEntries.length - 1;
+      const branchPrefix = isLastEntry ? "└── " : "├── ";
+      const childPrefix = isLastEntry ? "    " : "│   ";
+      const displayName = entry.isDirectory() ? `${entry.name}/` : entry.name;
+
+      treeLines.push(`${prefix}${branchPrefix}${displayName}`);
+
+      if (entry.isDirectory()) {
+        walk(entryPath, `${prefix}${childPrefix}`);
+      }
+    });
+  }
+
+  walk(resolvedRootDir, "");
+
+  return treeLines.join("\n");
+}
+
+/**
  * Reads a file or directory after enforcing concealment rules.
  * @param {string} targetPath File or directory path to read.
  * @param {string} rootDir Absolute root directory from which access is allowed.

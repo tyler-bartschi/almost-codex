@@ -4,6 +4,7 @@ import * as path from "path";
 import { FileSystemObject } from "../../src/global/Settings";
 import {
   findLocation,
+  listDirectoryTree,
   readContext,
   readDirectory,
   readFile,
@@ -125,6 +126,49 @@ describe("Reading tools", () => {
       path.join("packages", "feature", "src"),
       "src",
     ]);
+  });
+
+  it("lists the visible directory tree with nested formatting", () => {
+    const docsDirectory = path.join(tempRoot, "docs");
+    const nestedDirectory = path.join(docsDirectory, "guides");
+    const sourceDirectory = path.join(tempRoot, "src");
+
+    fs.mkdirSync(nestedDirectory, { recursive: true });
+    fs.mkdirSync(sourceDirectory, { recursive: true });
+    fs.writeFileSync(path.join(tempRoot, "README.md"), "root readme", "utf-8");
+    fs.writeFileSync(path.join(docsDirectory, "overview.md"), "overview", "utf-8");
+    fs.writeFileSync(path.join(nestedDirectory, "intro.md"), "intro", "utf-8");
+    fs.writeFileSync(path.join(sourceDirectory, "index.ts"), "export {};", "utf-8");
+
+    expect(listDirectoryTree(tempRoot, [])).toBe(
+      `${path.basename(tempRoot)}/\n` +
+        "├── docs/\n" +
+        "│   ├── guides/\n" +
+        "│   │   └── intro.md\n" +
+        "│   └── overview.md\n" +
+        "├── src/\n" +
+        "│   └── index.ts\n" +
+        "└── README.md",
+    );
+  });
+
+  it("omits concealed files and directories from the listed tree", () => {
+    const visibleDirectory = path.join(tempRoot, "visible");
+    const concealedDirectory = path.join(tempRoot, "secret");
+    const concealedFile = path.join(visibleDirectory, "hidden.txt");
+
+    fs.mkdirSync(visibleDirectory, { recursive: true });
+    fs.mkdirSync(concealedDirectory, { recursive: true });
+    fs.writeFileSync(path.join(visibleDirectory, "shown.txt"), "shown", "utf-8");
+    fs.writeFileSync(concealedFile, "hidden", "utf-8");
+    fs.writeFileSync(path.join(concealedDirectory, "secret.txt"), "secret", "utf-8");
+
+    expect(
+      listDirectoryTree(tempRoot, [
+        new FileSystemObject(path.join("visible", "hidden.txt"), "file"),
+        new FileSystemObject("secret", "directory"),
+      ]),
+    ).toBe(`${path.basename(tempRoot)}/\n└── visible/\n    └── shown.txt`);
   });
 
   it("does not return paths for concealed objects", () => {
