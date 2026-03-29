@@ -1,94 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
-import type { FileSystemObject } from "../global/Settings";
-
-type ConcealedObjectLike = Pick<FileSystemObject, "path" | "type">;
-
-/**
- * Returns normalized path variants used when comparing concealed entries.
- * @param {string} targetPath Raw path supplied by the caller or settings.
- * @returns {string[]} Normalized comparison variants for the provided path.
- */
-function getPathVariants(targetPath: string): string[] {
-  const normalizedPath = path.normalize(targetPath);
-  const resolvedPath = path.resolve(targetPath);
-  const variants = [targetPath, normalizedPath, resolvedPath];
-
-  try {
-    variants.push(fs.realpathSync.native(targetPath));
-  } catch {
-    try {
-      variants.push(fs.realpathSync(targetPath));
-    } catch {
-      // Ignore paths that do not exist when canonicalizing.
-    }
-  }
-
-  return Array.from(new Set(variants));
-}
-
-/**
- * Determines whether a candidate path is equal to or nested within a parent directory path.
- * @param {string} candidatePath Path being evaluated.
- * @param {string} parentPath Potential parent directory path.
- * @returns {boolean} `true` when `candidatePath` equals or is contained by `parentPath`.
- */
-function isSameOrNestedPath(candidatePath: string, parentPath: string): boolean {
-  const relativePath = path.relative(parentPath, candidatePath);
-  return relativePath === "" || (!relativePath.startsWith("..") && !path.isAbsolute(relativePath));
-}
-
-/**
- * Determines whether the requested path is concealed by exact match or by a concealed parent directory.
- * @param {string} requestedPath File or directory path requested by the caller.
- * @param {ConcealedObjectLike[]} concealedObjects Concealed filesystem objects to enforce.
- * @returns {boolean} `true` when the requested path should not be accessible.
- */
-function isConcealed(
-  requestedPath: string,
-  concealedObjects: ConcealedObjectLike[],
-): boolean {
-  const requestedVariants = getPathVariants(requestedPath);
-
-  return concealedObjects.some((concealedObject) => {
-    const concealedVariants = getPathVariants(concealedObject.path);
-
-    if (concealedVariants.some((variant) => requestedVariants.includes(variant))) {
-      return true;
-    }
-
-    if (concealedObject.type !== "directory") {
-      return false;
-    }
-
-    return requestedVariants.some((requestedVariant) =>
-      concealedVariants.some((concealedVariant) =>
-        isSameOrNestedPath(requestedVariant, concealedVariant),
-      ),
-    );
-  });
-}
-
-/**
- * Resolves a requested path against the provided root directory and verifies it stays inside that root.
- * @param {string} requestedPath File or directory path requested by the caller.
- * @param {string} rootDir Absolute root directory from which access is allowed.
- * @returns {string} The absolute resolved path within the root directory.
- */
-function resolvePathWithinRoot(requestedPath: string, rootDir: string): string {
-  if (!path.isAbsolute(rootDir)) {
-    throw new Error(`Root directory must be an absolute path: ${rootDir}`);
-  }
-
-  const resolvedRootDir = path.resolve(rootDir);
-  const resolvedTargetPath = path.resolve(resolvedRootDir, requestedPath);
-
-  if (!isSameOrNestedPath(resolvedTargetPath, resolvedRootDir) || !fs.existsSync(resolvedTargetPath)) {
-    throw new Error(`Requested file or directory cannot be found: ${requestedPath}`);
-  }
-
-  return resolvedTargetPath;
-}
+import type { RestrictedObjectLike } from "./ToolUtils";
+import { isRestrictedPath, resolvePathWithinRoot } from "./ToolUtils";
 
 /**
  * Reads a file and returns its contents as a UTF-8 string.
@@ -130,11 +43,11 @@ export function readDirectory(directoryPath: string): string {
 export function readContext(
   targetPath: string,
   rootDir: string,
-  concealedObjects: ConcealedObjectLike[],
+  concealedObjects: RestrictedObjectLike[],
 ): string {
   const resolvedTargetPath = resolvePathWithinRoot(targetPath, rootDir);
 
-  if (isConcealed(resolvedTargetPath, concealedObjects)) {
+  if (isRestrictedPath(resolvedTargetPath, rootDir, concealedObjects)) {
     throw new Error(`Path is concealed and cannot be read: ${targetPath}`);
   }
 
