@@ -1,0 +1,121 @@
+{
+  "read": {
+    "listDirectoryTree": {
+      "name": "listDirectoryTree",
+      "description": "Lists the visible file tree beneath the project root.",
+      "arguments": {},
+      "returnType": {
+        "type": "string",
+        "description": "A formatted tree representation of the visible project structure."
+      }
+    },
+    "findLocation": {
+      "name": "findLocation",
+      "description": "Recursively searches within the accessible project area for files or directories whose base name exactly matches the provided name. Returns all matching relative paths.",
+      "arguments": {
+        "name": {
+          "type": "string",
+          "description": "The exact file or directory name to search for."
+        }
+      },
+      "returnType": {
+        "type": "string[]",
+        "description": "A sorted list of relative paths for every matching file or directory."
+      }
+    },
+    "readContext": {
+      "name": "readContext",
+      "description": "Reads the contents of a file or, if the path is a directory, reads and combines the contents of its direct child files.",
+      "arguments": {
+        "targetPath": {
+          "type": "string",
+          "description": "The relative path of the file or directory to read."
+        }
+      },
+      "returnType": {
+        "type": "string",
+        "description": "The file contents, or combined contents of the direct child files in the directory."
+      }
+    }
+  },
+  "write": {
+    "deleteDirectory": {
+      "name": "deleteDirectory",
+      "description": "Deletes a directory recursively from the accessible project area after user confirmation.",
+      "arguments": {
+        "directoryPath": {
+          "type": "string",
+          "description": "The relative path of the directory to delete."
+        }
+      },
+      "returnType": {
+        "type": "string",
+        "description": "The absolute path of the deleted directory."
+      }
+    },
+    "deleteFile": {
+      "name": "deleteFile",
+      "description": "Deletes a file from the accessible project area after user confirmation.",
+      "arguments": {
+        "filePath": {
+          "type": "string",
+          "description": "The relative path of the file to delete."
+        }
+      },
+      "returnType": {
+        "type": "string",
+        "description": "The absolute path of the deleted file."
+      }
+    },
+    "appendToFile": {
+      "name": "appendToFile",
+      "description": "Appends text to an existing file in the accessible project area.",
+      "arguments": {
+        "filePath": {
+          "type": "string",
+          "description": "The relative path of the file to append to."
+        },
+        "contents": {
+          "type": "string",
+          "description": "The text content to append to the file."
+        }
+      },
+      "returnType": {
+        "type": "string",
+        "description": "The absolute path of the modified file."
+      }
+    },
+    "createFile": {
+      "name": "createFile",
+      "description": "Creates a file in the accessible project area and writes the provided contents to it. Missing parent directories are created automatically.",
+      "arguments": {
+        "filePath": {
+          "type": "string",
+          "description": "The relative path of the file to create."
+        },
+        "contents": {
+          "type": "string",
+          "description": "The text content to write into the new file."
+        }
+      },
+      "returnType": {
+        "type": "string",
+        "description": "The absolute path of the created file."
+      }
+    },
+    "createDirectory": {
+      "name": "createDirectory",
+      "description": "Creates a directory in the accessible project area. Missing parent directories are created automatically.",
+      "arguments": {
+        "directoryPath": {
+          "type": "string",
+          "description": "The relative path of the directory to create."
+        }
+      },
+      "returnType": {
+        "type": "string",
+        "description": "The absolute path of the created directory."
+      }
+    }
+  }
+}
