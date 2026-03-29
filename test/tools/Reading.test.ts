@@ -52,16 +52,16 @@ describe("Reading tools", () => {
     const filePath = path.join(tempRoot, "visible.txt");
     fs.writeFileSync(filePath, "visible", "utf-8");
 
-    expect(readContext(filePath, [])).toBe("visible");
+    expect(readContext(filePath, tempRoot, [])).toBe("visible");
   });
 
   it("rejects a path when it exactly matches a concealed object", () => {
     const filePath = path.join(tempRoot, "secret.txt");
     fs.writeFileSync(filePath, "hidden", "utf-8");
 
-    expect(
-      readContext(filePath, [new FileSystemObject(filePath, "file")]),
-    ).toBe(`Path is concealed and cannot be read: ${filePath}`);
+    expect(() =>
+      readContext(filePath, tempRoot, [new FileSystemObject(filePath, "file")]),
+    ).toThrow(`Path is concealed and cannot be read: ${filePath}`);
   });
 
   it("rejects a path when an absolute request is inside a relative concealed directory", () => {
@@ -75,14 +75,33 @@ describe("Reading tools", () => {
     process.chdir(projectRoot);
 
     try {
-      expect(
-        readContext(filePath, [
+      expect(() =>
+        readContext(filePath, projectRoot, [
           new FileSystemObject(path.join("src", "secret"), "directory"),
         ]),
-      ).toBe(`Path is concealed and cannot be read: ${filePath}`);
+      ).toThrow(`Path is concealed and cannot be read: ${filePath}`);
     } finally {
       process.chdir(originalCwd);
     }
+  });
+
+  it("rejects a file request when the target is outside the root directory", () => {
+    const filePath = path.join(tempRoot, "outside.txt");
+    fs.writeFileSync(filePath, "outside", "utf-8");
+    const nestedRoot = path.join(tempRoot, "project");
+    fs.mkdirSync(nestedRoot);
+
+    expect(() => readContext(filePath, nestedRoot, [])).toThrow(
+      `Requested file or directory cannot be found: ${filePath}`,
+    );
+  });
+
+  it("rejects a file request when the target does not exist within the root directory", () => {
+    const missingFilePath = path.join(tempRoot, "missing.txt");
+
+    expect(() => readContext(missingFilePath, tempRoot, [])).toThrow(
+      `Requested file or directory cannot be found: ${missingFilePath}`,
+    );
   });
 
   it("finds matching file and directory names throughout the tree", () => {
@@ -106,5 +125,11 @@ describe("Reading tools", () => {
       path.join("packages", "feature", "src"),
       "src",
     ]);
+  });
+
+  it("rejects a findLocation request when no matching file or directory exists", () => {
+    expect(() => findLocation("missing.txt", tempRoot)).toThrow(
+      "Requested file or directory cannot be found: missing.txt",
+    );
   });
 });

@@ -46,6 +46,7 @@ export interface RawSettingsFile {
  */
 export interface ReplState {
   currentMode: AgentMode;
+  rootDir: string;
   settings: Settings;
   shouldExit: boolean;
   shouldClear: boolean;

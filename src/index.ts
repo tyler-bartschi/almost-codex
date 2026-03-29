@@ -29,13 +29,15 @@ function createOpenAIClient(): OpenAI {
 /**
  * Builds the initial REPL runtime state used by the CLI loop.
  *
+ * @param {string} rootDir The working directory from which the REPL was launched.
  * @returns {ReplState} The initial state, including settings and current mode.
  */
-function createInitialState(): ReplState {
+function createInitialState(rootDir: string): ReplState {
   const settings = Settings.fromSettingsFile("user_default");
   const currentMode: AgentMode = "code";
   return {
     currentMode,
+    rootDir,
     settings,
     shouldExit: false,
     shouldClear: false,
@@ -162,7 +164,7 @@ export async function main(): Promise<void> {
 
   const parser = new ReplParser();
   const executor = new ReplExecutor();
-  const state = createInitialState();
+  const state = createInitialState(process.cwd());
 
   while (true) {
     // note to agents: this console.log is intentional to provide a new line before every prompt. do not remove

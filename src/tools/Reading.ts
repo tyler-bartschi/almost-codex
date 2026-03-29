@@ -70,6 +70,27 @@ function isConcealed(
 }
 
 /**
+ * Resolves a requested path against the provided root directory and verifies it stays inside that root.
+ * @param {string} requestedPath File or directory path requested by the caller.
+ * @param {string} rootDir Absolute root directory from which access is allowed.
+ * @returns {string} The absolute resolved path within the root directory.
+ */
+function resolvePathWithinRoot(requestedPath: string, rootDir: string): string {
+  if (!path.isAbsolute(rootDir)) {
+    throw new Error(`Root directory must be an absolute path: ${rootDir}`);
+  }
+
+  const resolvedRootDir = path.resolve(rootDir);
+  const resolvedTargetPath = path.resolve(resolvedRootDir, requestedPath);
+
+  if (!isSameOrNestedPath(resolvedTargetPath, resolvedRootDir) || !fs.existsSync(resolvedTargetPath)) {
+    throw new Error(`Requested file or directory cannot be found: ${requestedPath}`);
+  }
+
+  return resolvedTargetPath;
+}
+
+/**
  * Reads a file and returns its contents as a UTF-8 string.
  * @param {string} filePath Path to the file to read.
  * @returns {string} The file contents.
@@ -102,35 +123,37 @@ export function readDirectory(directoryPath: string): string {
 /**
  * Reads a file or directory after enforcing concealment rules.
  * @param {string} targetPath File or directory path to read.
+ * @param {string} rootDir Absolute root directory from which access is allowed.
  * @param {ConcealedObjectLike[]} concealedObjects Concealed filesystem objects that cannot be read.
  * @returns {string} The file contents or concatenated directory contents.
  */
 export function readContext(
   targetPath: string,
+  rootDir: string,
   concealedObjects: ConcealedObjectLike[],
 ): string {
-  if (isConcealed(targetPath, concealedObjects)) {
-    return `Path is concealed and cannot be read: ${targetPath}`;
+  const resolvedTargetPath = resolvePathWithinRoot(targetPath, rootDir);
+
+  if (isConcealed(resolvedTargetPath, concealedObjects)) {
+    throw new Error(`Path is concealed and cannot be read: ${targetPath}`);
   }
 
-  const targetStats = fs.statSync(targetPath);
+  const targetStats = fs.statSync(resolvedTargetPath);
   if (targetStats.isDirectory()) {
-    return readDirectory(targetPath);
+    return readDirectory(resolvedTargetPath);
   }
 
-  return readFile(targetPath);
+  return readFile(resolvedTargetPath);
 }
 
 /**
  * Recursively finds all files or directories whose base name matches the requested name.
  * @param {string} name File or directory name to match.
- * @param {string} rootDirectory Absolute root directory from which to search.
+ * @param {string} rootDir Absolute root directory from which to search.
  * @returns {string[]} Relative paths from the root directory for every matching filesystem object.
  */
-export function findLocation(name: string, rootDirectory: string): string[] {
-  if (!path.isAbsolute(rootDirectory)) {
-    throw new Error(`Root directory must be an absolute path: ${rootDirectory}`);
-  }
+export function findLocation(name: string, rootDir: string): string[] {
+  const resolvedRootDir = resolvePathWithinRoot(".", rootDir);
 
   const matches: string[] = [];
 
@@ -146,7 +169,7 @@ export function findLocation(name: string, rootDirectory: string): string[] {
       const entryPath = path.join(currentDirectory, entry.name);
 
       if (entry.name === name) {
-        matches.push(path.relative(rootDirectory, entryPath));
+        matches.push(path.relative(resolvedRootDir, entryPath));
       }
 
       if (entry.isDirectory()) {
@@ -155,6 +178,11 @@ export function findLocation(name: string, rootDirectory: string): string[] {
     }
   }
 
-  walk(rootDirectory);
+  walk(resolvedRootDir);
+
+  if (matches.length === 0) {
+    throw new Error(`Requested file or directory cannot be found: ${name}`);
+  }
+
   return matches.sort((leftPath, rightPath) => leftPath.localeCompare(rightPath));
 }
