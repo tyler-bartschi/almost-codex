@@ -2,14 +2,14 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import promptSync from "prompt-sync";
-import { FileSystemObject } from "../../src/global/Settings";
+import { FileSystemObject } from "../../../src/global/Settings";
 import {
   appendToFile,
   createDirectory,
   createFile,
   deleteDirectory,
   deleteFile,
-} from "../../src/tools/Writing";
+} from "../../../src/tools/functions/Writing";
 
 jest.mock("prompt-sync", () => jest.fn());
 

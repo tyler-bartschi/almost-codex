@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import promptSync from "prompt-sync";
-import type { RestrictedObjectLike } from "./ToolUtils";
-import { isRestrictedPath, resolvePathWithinRoot } from "./ToolUtils";
+import type { RestrictedObjectLike } from "../utils/ToolUtils";
+import { isRestrictedPath, resolvePathWithinRoot } from "../utils/ToolUtils";
 
 /**
  * Verifies that a target path is not protected or concealed before a write operation proceeds.

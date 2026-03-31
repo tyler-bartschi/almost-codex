@@ -8,7 +8,7 @@
     "compile": "npm run clean && npm run test && tsc && npm run copy-settings && npm run copy-tool-registry",
     "clean": "rm -rf dist",
     "copy-settings": "node -e \"require('fs').cpSync('src/settings','dist/settings',{recursive:true,force:true})\"",
-    "copy-tool-registry": "node -e \"require('fs').copyFileSync('src/tools/ToolRegistry.json','dist/tools/ToolRegistry.json')\"",
+    "copy-tool-registry": "node -e \"require('fs').mkdirSync('dist/tools/registry',{recursive:true});require('fs').copyFileSync('src/tools/registry/ToolRegistry.json','dist/tools/registry/ToolRegistry.json')\"",
     "script": "node ./dist/index.js",
     "test": "jest --config jest.config.js --passWithNoTests"
   },

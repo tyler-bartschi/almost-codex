@@ -75,7 +75,7 @@ export class ToolRegistry {
   private static getDefaultRegistryPath(): string {
     const candidatePaths = [
       path.join(__dirname, "ToolRegistry.json"),
-      path.resolve(process.cwd(), "src", "tools", "ToolRegistry.json"),
+      path.resolve(process.cwd(), "src", "tools", "registry", "ToolRegistry.json"),
     ];
 
     for (const candidatePath of candidatePaths) {

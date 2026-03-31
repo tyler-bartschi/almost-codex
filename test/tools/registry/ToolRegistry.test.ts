@@ -1,4 +1,4 @@
-import { ToolRegistry } from "../../src/tools/ToolRegistry";
+import { ToolRegistry } from "../../../src/tools/registry/ToolRegistry";
 
 describe("ToolRegistry", () => {
   it("returns read tool definitions without their registry keys", () => {

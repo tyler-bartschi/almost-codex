@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import type { FileSystemObject } from "../global/Settings";
+import type { FileSystemObject } from "../../global/Settings";
 
 export type RestrictedObjectLike = Pick<FileSystemObject, "path" | "type">;
 

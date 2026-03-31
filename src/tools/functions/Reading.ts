@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
-import type { RestrictedObjectLike } from "./ToolUtils";
-import { isRestrictedPath, resolvePathWithinRoot } from "./ToolUtils";
+import type { RestrictedObjectLike } from "../utils/ToolUtils";
+import { isRestrictedPath, resolvePathWithinRoot } from "../utils/ToolUtils";
 
 /**
  * Reads a file and returns its contents as a UTF-8 string.

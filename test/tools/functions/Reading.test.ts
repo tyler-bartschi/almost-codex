@@ -1,14 +1,14 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { FileSystemObject } from "../../src/global/Settings";
+import { FileSystemObject } from "../../../src/global/Settings";
 import {
   findLocation,
   listDirectoryTree,
   readContext,
   readDirectory,
   readFile,
-} from "../../src/tools/Reading";
+} from "../../../src/tools/functions/Reading";
 
 /**
  * Creates a temporary test workspace directory.
