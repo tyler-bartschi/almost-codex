@@ -1,7 +1,7 @@
+import { getGlobalReplSettings } from "../global/ReplStateStore";
 import { FileSystemObject, type AddRemoveOperation } from "../global/Settings";
 import { FILE_TYPES } from "./replExecutorConstants";
 import { ReplExecutorSupport } from "./replExecutorSupport";
-import type { ReplState } from "./replExecutorTypes";
 import type { ParsedCommand } from "./replParser";
 
 /**
@@ -17,33 +17,29 @@ export class ReplObjectListCommands {
   /**
    * Executes `/protect` command operations.
    * @param command Parsed `/protect` command.
-   * @param state Current REPL state containing settings.
    * @returns Success, listing, or validation message.
    */
-  public executeProtect(command: ParsedCommand, state: ReplState): string {
-    return this.executeObjectListCommand(command, state, "protected");
+  public executeProtect(command: ParsedCommand): string {
+    return this.executeObjectListCommand(command, "protected");
   }
 
   /**
    * Executes `/conceal` command operations.
    * @param command Parsed `/conceal` command.
-   * @param state Current REPL state containing settings.
    * @returns Success, listing, or validation message.
    */
-  public executeConceal(command: ParsedCommand, state: ReplState): string {
-    return this.executeObjectListCommand(command, state, "concealed");
+  public executeConceal(command: ParsedCommand): string {
+    return this.executeObjectListCommand(command, "concealed");
   }
 
   /**
    * Adds, removes, or lists protected/concealed objects in settings.
    * @param command Parsed command with args and flags.
-   * @param state Current REPL state containing settings.
    * @param target Whether to mutate `protected` or `concealed` objects.
    * @returns Success, listing, or validation message.
    */
   private executeObjectListCommand(
     command: ParsedCommand,
-    state: ReplState,
     target: "protected" | "concealed",
   ): string {
     const usageAll = target === "protected"
@@ -72,10 +68,11 @@ export class ReplObjectListCommands {
           : "Usage: /conceal --list";
       }
 
+      const settings = getGlobalReplSettings();
       const objects =
         target === "protected"
-          ? state.settings.protectedObjects
-          : state.settings.concealedObjects;
+          ? settings.protectedObjects
+          : settings.concealedObjects;
       if (objects.length === 0) {
         return "(none)";
       }
@@ -114,10 +111,11 @@ export class ReplObjectListCommands {
         : new FileSystemObject(pathValue, fileObjectType);
     const operation: AddRemoveOperation = removeFlag ? "remove" : "add";
 
+    const settings = getGlobalReplSettings();
     if (target === "protected") {
-      state.settings.setProtectedObjects(operation, pathOrObject);
+      settings.setProtectedObjects(operation, pathOrObject);
     } else {
-      state.settings.setConcealedObjects(operation, pathOrObject);
+      settings.setConcealedObjects(operation, pathOrObject);
     }
 
     const verb = operation === "add" ? "Added" : "Removed";

@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import { requireGlobalReplState } from "../global/ReplStateStore";
 import {
   type AddRemoveOperation,
   type Settings,
@@ -11,7 +12,7 @@ import {
   SAFETY_MODES,
 } from "./replExecutorConstants";
 import { ReplExecutorSupport } from "./replExecutorSupport";
-import type { RawSettingsFile, ReplState } from "./replExecutorTypes";
+import type { RawSettingsFile } from "./replExecutorTypes";
 import type { ParsedCommand } from "./replParser";
 
 /**
@@ -27,10 +28,9 @@ export class ReplConfigCommands {
   /**
    * Dispatches `/config` subcommands.
    * @param command Parsed `/config` command.
-   * @param state Current REPL state used by config operations.
    * @returns Subcommand result text or validation errors.
    */
-  public executeConfig(command: ParsedCommand, state: ReplState): string {
+  public executeConfig(command: ParsedCommand): string {
     if (command.args.length === 0) {
       return "Usage: /config <list|show|use|create|delete|set|revert> ...";
     }
@@ -38,19 +38,19 @@ export class ReplConfigCommands {
     const subcommand = command.args[0];
     switch (subcommand) {
       case "list":
-        return this.configList(command, state);
+        return this.configList(command);
       case "show":
-        return this.configShow(command, state);
+        return this.configShow(command);
       case "use":
-        return this.configUse(command, state);
+        return this.configUse(command);
       case "create":
         return this.configCreate(command);
       case "delete":
-        return this.configDelete(command, state);
+        return this.configDelete(command);
       case "set":
-        return this.configSet(command, state);
+        return this.configSet(command);
       case "revert":
-        return this.configRevert(command, state);
+        return this.configRevert(command);
       default:
         return `Unknown config subcommand "${subcommand}".`;
     }
@@ -59,14 +59,14 @@ export class ReplConfigCommands {
   /**
    * Lists available profile names and marks the active profile.
    * @param command Parsed `/config list` command.
-   * @param state Current REPL state containing active profile info.
    * @returns Newline-delimited profile list or usage text.
    */
-  private configList(command: ParsedCommand, state: ReplState): string {
+  private configList(command: ParsedCommand): string {
     if (command.args.length !== 1 || command.flags.size > 0) {
       return "Usage: /config list";
     }
 
+    const state = requireGlobalReplState();
     const names = this.support.listConfigNames().filter((name) => name !== "system_default");
     const lines = names.map((name) => {
       const activeMarker = name === state.settings.configName ? " (active)" : "";
@@ -78,14 +78,14 @@ export class ReplConfigCommands {
   /**
    * Displays raw JSON for the active, default, or named profile.
    * @param command Parsed `/config show` command.
-   * @param state Current REPL state used to resolve active profile.
    * @returns Pretty-printed JSON or a usage/profile error.
    */
-  private configShow(command: ParsedCommand, state: ReplState): string {
+  private configShow(command: ParsedCommand): string {
     if (command.flags.size > 0) {
       return "Usage: /config show [default|named <name>]";
     }
 
+    const state = requireGlobalReplState();
     if (command.args.length === 1) {
       const raw = this.support.readRawSettings(state.settings.configName);
       if ("error" in raw) {
@@ -120,14 +120,14 @@ export class ReplConfigCommands {
   /**
    * Switches active runtime settings to a named profile.
    * @param command Parsed `/config use` command.
-   * @param state Current REPL state to mutate.
    * @returns Success or usage/profile validation message.
    */
-  private configUse(command: ParsedCommand, state: ReplState): string {
+  private configUse(command: ParsedCommand): string {
     if (command.args.length !== 2 || command.flags.size > 0) {
       return "Usage: /config use <name>";
     }
 
+    const state = requireGlobalReplState();
     const profileName = command.args[1];
     if (profileName === "system_default") {
       return "Error: cannot use system_default as active profile.";
@@ -193,14 +193,14 @@ export class ReplConfigCommands {
   /**
    * Deletes a named profile, reverting active profile to user default if needed.
    * @param command Parsed `/config delete` command.
-   * @param state Current REPL state for fallback profile reload.
    * @returns Success or usage/profile validation message.
    */
-  private configDelete(command: ParsedCommand, state: ReplState): string {
+  private configDelete(command: ParsedCommand): string {
     if (command.args.length !== 3 || command.args[1] !== "named" || command.flags.size > 0) {
       return "Usage: /config delete named <name>";
     }
 
+    const state = requireGlobalReplState();
     const profileName = command.args[2];
     if (profileName === undefined) {
       return "Usage: /config delete named <name>";
@@ -225,10 +225,9 @@ export class ReplConfigCommands {
   /**
    * Applies a targeted field mutation to a default or named profile.
    * @param command Parsed `/config set` command.
-   * @param state Current REPL state for active-profile reloads.
    * @returns Success or usage/validation message.
    */
-  private configSet(command: ParsedCommand, state: ReplState): string {
+  private configSet(command: ParsedCommand): string {
     const parseTarget = this.support.parseConfigTypeAndName(command.args, 1);
     if ("error" in parseTarget) {
       return `${parseTarget.error}\nUsage: /config set <type> [<name>] --field <field> --value <value>`;
@@ -278,17 +277,16 @@ export class ReplConfigCommands {
       return applyResult.error;
     }
 
-    this.support.reloadActiveSettingsIfNeeded(parseTarget.profileName, state);
+    this.support.reloadActiveSettingsIfNeeded(parseTarget.profileName);
     return `Updated "${field}" on profile "${parseTarget.profileName}".`;
   }
 
   /**
    * Reverts an entire profile or one field from `system_default`.
    * @param command Parsed `/config revert` command.
-   * @param state Current REPL state for active-profile reloads.
    * @returns Success or usage/validation message.
    */
-  private configRevert(command: ParsedCommand, state: ReplState): string {
+  private configRevert(command: ParsedCommand): string {
     const parseTarget = this.support.parseConfigTypeAndName(command.args, 1);
     if ("error" in parseTarget) {
       return `${parseTarget.error}\nUsage: /config revert <type> [<name>] [--field <field>]`;
@@ -329,7 +327,7 @@ export class ReplConfigCommands {
         name: parseTarget.profileName,
       };
       this.support.writeRawSettings(targetRaw);
-      this.support.reloadActiveSettingsIfNeeded(parseTarget.profileName, state);
+      this.support.reloadActiveSettingsIfNeeded(parseTarget.profileName);
       return `Reverted entire profile "${parseTarget.profileName}" from system_default.`;
     }
 
@@ -339,7 +337,7 @@ export class ReplConfigCommands {
     }
 
     this.support.writeRawSettings(targetRaw);
-    this.support.reloadActiveSettingsIfNeeded(parseTarget.profileName, state);
+    this.support.reloadActiveSettingsIfNeeded(parseTarget.profileName);
     return `Reverted field "${fieldFlag}" on profile "${parseTarget.profileName}" from system_default.`;
   }
 

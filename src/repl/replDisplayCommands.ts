@@ -1,3 +1,4 @@
+import { getGlobalReplCurrentMode, getGlobalReplSettings } from "../global/ReplStateStore";
 import type { AgentMode } from "../global/Settings";
 import {
   ANSI_BOLD,
@@ -10,7 +11,6 @@ import {
   MODES,
 } from "./replExecutorConstants";
 import { ReplExecutorSupport } from "./replExecutorSupport";
-import type { ReplState } from "./replExecutorTypes";
 import type { ParsedCommand } from "./replParser";
 
 /**
@@ -60,10 +60,9 @@ export class ReplDisplayCommands {
   /**
    * Lists configured agents and their effective runtime settings.
    * @param command Parsed `/agents` command and optional mode filter.
-   * @param state Current REPL state containing settings.
    * @returns Formatted agent listing or a usage/validation message.
    */
-  public executeAgents(command: ParsedCommand, state: ReplState): string {
+  public executeAgents(command: ParsedCommand): string {
     if (command.flags.size > 0) {
       return "Usage: /agents [<mode>]";
     }
@@ -78,25 +77,26 @@ export class ReplDisplayCommands {
     }
 
     const modes = filterMode !== undefined ? [filterMode] : MODES;
+    const settings = getGlobalReplSettings();
     const lines: string[] = [];
     for (const [index, mode] of modes.entries()) {
       if (index > 0) {
         lines.push("");
       }
-      const agents = state.settings.agentSettings[mode];
+      const agents = settings.agentSettings[mode];
       lines.push(`${ANSI_BOLD}Mode: ${this.displayModeName(mode)}${ANSI_RESET}`);
       for (const [agentName, agentSetting] of Object.entries(agents)) {
         const effectivePersonality =
           agentSetting.personality === "default"
-            ? state.settings.defaultPersonality
+            ? settings.defaultPersonality
             : agentSetting.personality;
         const effectiveReasoning =
           agentSetting.reasoning === "default"
-            ? state.settings.defaultReasoning
+            ? settings.defaultReasoning
             : agentSetting.reasoning;
         const effectiveModel =
           agentSetting.model === "default"
-            ? state.settings.defaultModel
+            ? settings.defaultModel
             : agentSetting.model;
         lines.push(`  ${ANSI_PURPLE}${agentName}${ANSI_RESET}`);
         lines.push(`    Description: ${agentSetting.description}`);
@@ -111,16 +111,15 @@ export class ReplDisplayCommands {
   /**
    * Prints current runtime status rows for the REPL session.
    * @param command Parsed `/status` command.
-   * @param state Current REPL state containing active mode.
    * @returns ANSI-formatted status output or usage text.
    */
-  public executeStatus(command: ParsedCommand, state: ReplState): string {
+  public executeStatus(command: ParsedCommand): string {
     if (command.args.length !== 0 || command.flags.size > 0) {
       return "Usage: /status";
     }
 
     const rows: Array<[string, string]> = [
-      ["Mode:", state.currentMode],
+      ["Mode:", getGlobalReplCurrentMode()],
       ["Context window:", "yes"],
       ["Weekly limit:", "however much you're willing to pay, it's your api key"],
     ];

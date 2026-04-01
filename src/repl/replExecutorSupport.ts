@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { requireGlobalReplState } from "../global/ReplStateStore";
 import {
   FileSystemObject,
   type AddRemoveOperation,
@@ -23,7 +24,6 @@ import {
 import type {
   PermissionToken,
   RawSettingsFile,
-  ReplState,
   SafetyMode,
 } from "./replExecutorTypes";
 
@@ -253,14 +253,14 @@ export class ReplExecutorSupport {
 
   /**
    * Resolves which settings object should be mutated for a command.
-   * @param state Current REPL runtime state.
    * @param profileName Optional explicit profile override.
    * @returns Active/loaded settings target or an error.
    */
   public resolveTargetSettings(
-    state: ReplState,
     profileName?: string,
   ): { name: string; settings: Settings } | { error: string } {
+    const state = requireGlobalReplState();
+
     if (!profileName || profileName === state.settings.configName) {
       return { name: state.settings.configName, settings: state.settings };
     }
@@ -397,10 +397,11 @@ export class ReplExecutorSupport {
   /**
    * Reloads active runtime settings if the edited profile is currently active.
    * @param profileName Profile name that was modified.
-   * @param state Current REPL state containing active settings.
    * @returns Nothing.
    */
-  public reloadActiveSettingsIfNeeded(profileName: string, state: ReplState): void {
+  public reloadActiveSettingsIfNeeded(profileName: string): void {
+    const state = requireGlobalReplState();
+
     if (state.settings.configName === profileName) {
       state.settings.loadSettings(profileName);
     }

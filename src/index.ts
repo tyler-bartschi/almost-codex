@@ -1,6 +1,13 @@
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import * as readline from "readline";
+import {
+  getGlobalReplCurrentMode,
+  getGlobalReplShouldClear,
+  getGlobalReplShouldExit,
+  requireGlobalReplState,
+  setGlobalReplState,
+} from "./global/ReplStateStore";
 import { Settings, type AgentMode } from "./global/Settings";
 import { ReplExecutor, type ReplState } from "./repl/replExecutor";
 import { ReplParser } from "./repl/replParser";
@@ -164,14 +171,14 @@ export async function main(): Promise<void> {
 
   const parser = new ReplParser();
   const executor = new ReplExecutor();
-  const state = createInitialState(process.cwd());
+  setGlobalReplState(createInitialState(process.cwd()));
 
   while (true) {
     // note to agents: this console.log is intentional to provide a new line before every prompt. do not remove
     console.log();
     let input: string;
     try {
-      input = await readPromptLine(`[${state.currentMode}]> `);
+      input = await readPromptLine(`[${getGlobalReplCurrentMode()}]> `);
     } catch (error) {
       if (error instanceof Error && error.message === "SIGINT") {
         shutdownInput();
@@ -195,11 +202,11 @@ export async function main(): Promise<void> {
       continue;
     }
 
-    const output = executor.execute(parsed.command, state);
+    const output = executor.execute(parsed.command);
 
-    if (state.shouldClear) {
+    if (getGlobalReplShouldClear()) {
       process.stdout.write("\u001Bc");
-      state.shouldClear = false;
+      requireGlobalReplState().shouldClear = false;
       continue;
     }
 
@@ -207,7 +214,7 @@ export async function main(): Promise<void> {
       console.log(output);
     }
 
-    if (state.shouldExit) {
+    if (getGlobalReplShouldExit()) {
       shutdownInput();
       return;
     }

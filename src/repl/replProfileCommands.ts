@@ -1,5 +1,5 @@
+import { requireGlobalReplState } from "../global/ReplStateStore";
 import type { ParsedCommand } from "./replParser";
-import type { ReplState } from "./replExecutorTypes";
 import { MODELS, PERSONALITIES, REASONING } from "./replExecutorConstants";
 import { ReplExecutorSupport } from "./replExecutorSupport";
 
@@ -16,10 +16,9 @@ export class ReplProfileCommands {
   /**
    * Updates the default model or a specific agent model override.
    * @param command Parsed `/model` command with args/flags.
-   * @param state Current REPL state used for settings updates.
    * @returns Success or validation message.
    */
-  public executeModel(command: ParsedCommand, state: ReplState): string {
+  public executeModel(command: ParsedCommand): string {
     const parsedProfile = this.support.readOptionalProfileFlag(
       command,
       "Usage: /model <model> | /model <agent_id> <model>",
@@ -32,7 +31,7 @@ export class ReplProfileCommands {
       return "Usage: /model <model> | /model <agent_id> <model>";
     }
 
-    const target = this.support.resolveTargetSettings(state, parsedProfile.profileName);
+    const target = this.support.resolveTargetSettings(parsedProfile.profileName);
     if ("error" in target) {
       return target.error;
     }
@@ -46,7 +45,7 @@ export class ReplProfileCommands {
         return `Invalid model "${model}". Accepted values: ${MODELS.join(", ")}`;
       }
       target.settings.defaultModel = model;
-      this.support.reloadActiveSettingsIfNeeded(target.name, state);
+      this.support.reloadActiveSettingsIfNeeded(target.name);
       return `Set default model to ${model} on profile "${target.name}".`;
     }
 
@@ -70,17 +69,16 @@ export class ReplProfileCommands {
       "model",
       model,
     );
-    this.support.reloadActiveSettingsIfNeeded(target.name, state);
+    this.support.reloadActiveSettingsIfNeeded(target.name);
     return `Set model for ${resolvedAgent.mode}.${resolvedAgent.agentName} to ${model} on profile "${target.name}".`;
   }
 
   /**
    * Updates the default reasoning level or an agent reasoning override.
    * @param command Parsed `/reasoning` command with args/flags.
-   * @param state Current REPL state used for settings updates.
    * @returns Success or validation message.
    */
-  public executeReasoning(command: ParsedCommand, state: ReplState): string {
+  public executeReasoning(command: ParsedCommand): string {
     const parsedProfile = this.support.readOptionalProfileFlag(
       command,
       "Usage: /reasoning <reasoning> | /reasoning <agent_id> <reasoning>",
@@ -93,7 +91,7 @@ export class ReplProfileCommands {
       return "Usage: /reasoning <reasoning> | /reasoning <agent_id> <reasoning>";
     }
 
-    const target = this.support.resolveTargetSettings(state, parsedProfile.profileName);
+    const target = this.support.resolveTargetSettings(parsedProfile.profileName);
     if ("error" in target) {
       return target.error;
     }
@@ -107,7 +105,7 @@ export class ReplProfileCommands {
         return `Invalid reasoning "${reasoning}". Accepted values: ${REASONING.join(", ")}`;
       }
       target.settings.defaultReasoning = reasoning;
-      this.support.reloadActiveSettingsIfNeeded(target.name, state);
+      this.support.reloadActiveSettingsIfNeeded(target.name);
       return `Set default reasoning to ${reasoning} on profile "${target.name}".`;
     }
 
@@ -131,17 +129,16 @@ export class ReplProfileCommands {
       "reasoning",
       reasoning,
     );
-    this.support.reloadActiveSettingsIfNeeded(target.name, state);
+    this.support.reloadActiveSettingsIfNeeded(target.name);
     return `Set reasoning for ${resolvedAgent.mode}.${resolvedAgent.agentName} to ${reasoning} on profile "${target.name}".`;
   }
 
   /**
    * Lists available personalities or updates default/agent personality values.
    * @param command Parsed `/personality` command with args/flags.
-   * @param state Current REPL state used for settings updates.
    * @returns Personality list, success message, or validation message.
    */
-  public executePersonality(command: ParsedCommand, state: ReplState): string {
+  public executePersonality(command: ParsedCommand): string {
     const allowedFlags = new Set(["profile", "list"]);
     for (const flagName of command.flags.keys()) {
       if (!allowedFlags.has(flagName)) {
@@ -169,7 +166,7 @@ export class ReplProfileCommands {
       return "Usage: /personality <personality> | /personality <agent_id> <personality>";
     }
 
-    const target = this.support.resolveTargetSettings(state, parsedProfile.profileName);
+    const target = this.support.resolveTargetSettings(parsedProfile.profileName);
     if ("error" in target) {
       return target.error;
     }
@@ -183,7 +180,7 @@ export class ReplProfileCommands {
         return `Invalid personality "${personality}". Accepted values: ${PERSONALITIES.join(", ")}`;
       }
       target.settings.defaultPersonality = personality;
-      this.support.reloadActiveSettingsIfNeeded(target.name, state);
+      this.support.reloadActiveSettingsIfNeeded(target.name);
       return `Set default personality to ${personality} on profile "${target.name}".`;
     }
 
@@ -207,21 +204,21 @@ export class ReplProfileCommands {
       "personality",
       personality,
     );
-    this.support.reloadActiveSettingsIfNeeded(target.name, state);
+    this.support.reloadActiveSettingsIfNeeded(target.name);
     return `Set personality for ${resolvedAgent.mode}.${resolvedAgent.agentName} to ${personality} on profile "${target.name}".`;
   }
 
   /**
    * Sets git safety mode on the active profile.
    * @param command Parsed `/git` command flags.
-   * @param state Current REPL state containing active settings.
    * @returns Success or usage message.
    */
-  public executeGit(command: ParsedCommand, state: ReplState): string {
+  public executeGit(command: ParsedCommand): string {
     if (command.args.length > 0) {
       return "Usage: /git --safe | /git --unsafe";
     }
 
+    const state = requireGlobalReplState();
     const safe = command.flags.get("safe") === true;
     const unsafe = command.flags.get("unsafe") === true;
     if ((safe && unsafe) || (!safe && !unsafe) || command.flags.size !== 1) {
@@ -235,14 +232,14 @@ export class ReplProfileCommands {
   /**
    * Sets script safety mode on the active profile.
    * @param command Parsed `/script` command flags.
-   * @param state Current REPL state containing active settings.
    * @returns Success or usage message.
    */
-  public executeScript(command: ParsedCommand, state: ReplState): string {
+  public executeScript(command: ParsedCommand): string {
     if (command.args.length > 0) {
       return "Usage: /script --safe | /script --unsafe";
     }
 
+    const state = requireGlobalReplState();
     const safe = command.flags.get("safe") === true;
     const unsafe = command.flags.get("unsafe") === true;
     if ((safe && unsafe) || (!safe && !unsafe) || command.flags.size !== 1) {

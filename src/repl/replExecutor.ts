@@ -1,10 +1,10 @@
+import { requireGlobalReplState } from "../global/ReplStateStore";
 import type { ParsedCommand } from "./replParser";
 import { ReplConfigCommands } from "./replConfigCommands";
 import { ReplDisplayCommands } from "./replDisplayCommands";
 import { ReplObjectListCommands } from "./replObjectListCommands";
 import { ReplProfileCommands } from "./replProfileCommands";
 import { ReplExecutorSupport } from "./replExecutorSupport";
-import type { ReplState } from "./replExecutorTypes";
 
 export type { ReplState } from "./replExecutorTypes";
 
@@ -26,10 +26,11 @@ export class ReplExecutor {
   /**
    * Executes a parsed slash command against the current REPL state.
    * @param command Parsed command name, positional arguments, and flags.
-   * @param state Mutable REPL runtime state, including active mode and settings.
    * @returns A user-facing status or error message for the command result.
    */
-  public execute(command: ParsedCommand, state: ReplState): string {
+  public execute(command: ParsedCommand): string {
+    const state = requireGlobalReplState();
+
     try {
       switch (command.name) {
         case "help":
@@ -37,15 +38,15 @@ export class ReplExecutor {
         case "describe":
           return this.displayCommands.executeDescribe(command);
         case "agents":
-          return this.displayCommands.executeAgents(command, state);
+          return this.displayCommands.executeAgents(command);
         case "model":
-          return this.profileCommands.executeModel(command, state);
+          return this.profileCommands.executeModel(command);
         case "reasoning":
-          return this.profileCommands.executeReasoning(command, state);
+          return this.profileCommands.executeReasoning(command);
         case "personality":
-          return this.profileCommands.executePersonality(command, state);
+          return this.profileCommands.executePersonality(command);
         case "config":
-          return this.configCommands.executeConfig(command, state);
+          return this.configCommands.executeConfig(command);
         case "ask":
         case "chat":
           state.currentMode = "ask";
@@ -62,15 +63,15 @@ export class ReplExecutor {
           state.currentMode = "document";
           return "Switched mode to document.";
         case "git":
-          return this.profileCommands.executeGit(command, state);
+          return this.profileCommands.executeGit(command);
         case "script":
-          return this.profileCommands.executeScript(command, state);
+          return this.profileCommands.executeScript(command);
         case "status":
-          return this.displayCommands.executeStatus(command, state);
+          return this.displayCommands.executeStatus(command);
         case "protect":
-          return this.objectListCommands.executeProtect(command, state);
+          return this.objectListCommands.executeProtect(command);
         case "conceal":
-          return this.objectListCommands.executeConceal(command, state);
+          return this.objectListCommands.executeConceal(command);
         case "clear":
           state.shouldClear = true;
           return "";
