@@ -187,7 +187,7 @@
     "readPlan": {
       "type": "function",
       "name": "readPlan",
-      "description": "Reads a markdown planning file from the REPL root agent-plans directory. Returns the contents of the planning file.",
+      "description": "Reads a markdown planning file from the root agent-plans directory. Returns the contents of the planning file.",
       "strict": true,
       "parameters": {
         "type": "object",
