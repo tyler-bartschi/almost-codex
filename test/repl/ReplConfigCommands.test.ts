@@ -40,12 +40,12 @@ describe("ReplConfigCommands", () => {
     fs.writeFileSync(USER_CONFIG_PATH, initialUserRaw, "utf-8");
   });
 
-  it("accepts read_plan and write_plan in config permission mutations", () => {
+  it("accepts read_plan and save_plan in config permission mutations", () => {
     const parser = new ReplParser();
     const commands = new ReplConfigCommands(new ReplExecutorSupport());
 
     const plannerParsed = parser.parse(
-      "/config set default --field agents.code.planner.permissions --value write_plan --add",
+      "/config set default --field agents.code.planner.permissions --value save_plan --add",
     );
     if (plannerParsed.kind !== "command") {
       throw new Error("Expected planner command to parse successfully.");
@@ -69,7 +69,7 @@ describe("ReplConfigCommands", () => {
     );
 
     const settings = Settings.fromUserDefault();
-    expect(settings.agentSettings.code.planner.permissions).toContain("write_plan");
+    expect(settings.agentSettings.code.planner.permissions).toContain("save_plan");
     expect(settings.agentSettings.code.executor.permissions).toContain("read_plan");
   });
 });

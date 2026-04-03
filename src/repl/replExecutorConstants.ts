@@ -55,7 +55,7 @@ export const PERMISSIONS: PermissionToken[] = [
   "scripts",
   "spawn_agent",
   "read_plan",
-  "write_plan",
+  "save_plan",
 ];
 
 /**

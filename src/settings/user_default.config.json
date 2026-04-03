@@ -28,7 +28,7 @@
         "personality": "default",
         "reasoning": "default",
         "model": "default",
-        "permissions": ["read", "write_plan"]
+        "permissions": ["read", "save_plan"]
       },
       "executor": {
         "description": "Executes the steps or goal provided by an orchestrator or planner, and writes code",

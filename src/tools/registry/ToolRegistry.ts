@@ -11,6 +11,8 @@ type ToolCollection = Record<string, ToolDefinition>;
 type ToolRegistryContents = {
   read: ToolCollection;
   write: ToolCollection;
+  savePlan: ToolCollection;
+  readPlan: ToolCollection;
 };
 
 /**
@@ -20,6 +22,8 @@ export class ToolRegistry {
   private readonly toolRegistry: ToolRegistryContents;
   private readonly readTools: ToolCollection;
   private readonly writeTools: ToolCollection;
+  private readonly savePlanTools: ToolCollection;
+  private readonly readPlanTools: ToolCollection;
 
   /**
    * Creates a tool registry from the provided ToolRegistry.json file.
@@ -34,10 +38,16 @@ export class ToolRegistry {
     if (
       parsedRegistry.read === undefined ||
       parsedRegistry.write === undefined ||
+      parsedRegistry.savePlan === undefined ||
+      parsedRegistry.readPlan === undefined ||
       typeof parsedRegistry.read !== "object" ||
       typeof parsedRegistry.write !== "object" ||
+      typeof parsedRegistry.savePlan !== "object" ||
+      typeof parsedRegistry.readPlan !== "object" ||
       parsedRegistry.read === null ||
-      parsedRegistry.write === null
+      parsedRegistry.write === null ||
+      parsedRegistry.savePlan === null ||
+      parsedRegistry.readPlan === null
     ) {
       throw new Error(`Invalid tool registry file: ${resolvedRegistryPath}`);
     }
@@ -45,9 +55,13 @@ export class ToolRegistry {
     this.toolRegistry = {
       read: parsedRegistry.read as ToolCollection,
       write: parsedRegistry.write as ToolCollection,
+      savePlan: parsedRegistry.savePlan as ToolCollection,
+      readPlan: parsedRegistry.readPlan as ToolCollection,
     };
     this.readTools = this.toolRegistry.read;
     this.writeTools = this.toolRegistry.write;
+    this.savePlanTools = this.toolRegistry.savePlan;
+    this.readPlanTools = this.toolRegistry.readPlan;
   }
 
   /**
@@ -66,6 +80,24 @@ export class ToolRegistry {
    */
   public getWriteTools(excludedTools: string[] = []): ToolDefinition[] {
     return this.filterTools(this.writeTools, excludedTools);
+  }
+
+  /**
+   * Returns the registered save-plan tools, excluding any requested tool names.
+   * @param {string[]} [excludedTools=[]] Tool names to omit from the result.
+   * @returns {ToolDefinition[]} The save-plan tool definitions without their outer registry keys.
+   */
+  public getSavePlanTools(excludedTools: string[] = []): ToolDefinition[] {
+    return this.filterTools(this.savePlanTools, excludedTools);
+  }
+
+  /**
+   * Returns the registered read-plan tools, excluding any requested tool names.
+   * @param {string[]} [excludedTools=[]] Tool names to omit from the result.
+   * @returns {ToolDefinition[]} The read-plan tool definitions without their outer registry keys.
+   */
+  public getReadPlanTools(excludedTools: string[] = []): ToolDefinition[] {
+    return this.filterTools(this.readPlanTools, excludedTools);
   }
 
   /**

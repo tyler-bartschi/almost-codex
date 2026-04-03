@@ -89,4 +89,58 @@ describe("ToolRegistry", () => {
       },
     ]);
   });
+
+  it("returns save-plan tool definitions without excluded tools", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(toolRegistry.getSavePlanTools()).toEqual([
+      {
+        type: "function",
+        name: "savePlan",
+        description:
+          "Creates a markdown planning file under the REPL root agent-plans directory. Returns the generated planning file name once it has been written.",
+        strict: true,
+        parameters: {
+          type: "object",
+          properties: {
+            name: {
+              type: "string",
+              description: "Base name to use for the planning file.",
+            },
+            content: {
+              type: "string",
+              description: "Markdown content to write into the planning file.",
+            },
+          },
+        },
+        required: ["name", "content"],
+        additionalProperties: false,
+      },
+    ]);
+  });
+
+  it("returns read-plan tool definitions without excluded tools", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(toolRegistry.getReadPlanTools()).toEqual([
+      {
+        type: "function",
+        name: "readPlan",
+        description:
+          "Reads a markdown planning file from the root agent-plans directory. Returns the contents of the planning file.",
+        strict: true,
+        parameters: {
+          type: "object",
+          properties: {
+            filename: {
+              type: "string",
+              description: "Planning file name to read.",
+            },
+          },
+        },
+        required: ["filename"],
+        additionalProperties: false,
+      },
+    ]);
+  });
 });
