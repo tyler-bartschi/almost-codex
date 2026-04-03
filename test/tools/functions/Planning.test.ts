@@ -4,7 +4,7 @@ import * as path from "path";
 import type { Settings } from "../../../src/global/Settings";
 import { clearGlobalReplState, setGlobalReplState } from "../../../src/global/ReplStateStore";
 import type { ReplState } from "../../../src/repl/replExecutorTypes";
-import { savePlan } from "../../../src/tools/functions/Planning";
+import { readPlan, savePlan } from "../../../src/tools/functions/Planning";
 
 jest.mock("fs", () => {
   const actualFs = jest.requireActual("fs") as typeof import("fs");
@@ -106,5 +106,25 @@ describe("Planning tools", () => {
     expect(() => savePlan("retry", "plan body")).toThrow(
       "File name already taken. Please try again with a different file name",
     );
+  });
+
+  it("reads an existing plan file from the agent-plans directory", () => {
+    const planDirectoryPath = path.join(tempRoot, "agent-plans");
+    const planFilePath = path.join(planDirectoryPath, "saved-plan.md");
+    fs.mkdirSync(planDirectoryPath, { recursive: true });
+    fs.writeFileSync(planFilePath, "# Existing Plan", "utf-8");
+
+    expect(readPlan("saved-plan.md")).toBe("# Existing Plan");
+  });
+
+  it("throws when the agent-plans directory does not exist", () => {
+    expect(() => readPlan("missing-plan.md")).toThrow("The plan does not exist");
+  });
+
+  it("throws when the requested plan file does not exist", () => {
+    const planDirectoryPath = path.join(tempRoot, "agent-plans");
+    fs.mkdirSync(planDirectoryPath, { recursive: true });
+
+    expect(() => readPlan("missing-plan.md")).toThrow("The plan does not exist");
   });
 });

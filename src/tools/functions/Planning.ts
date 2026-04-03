@@ -47,3 +47,20 @@ export function savePlan(name: string, content: string): string {
     );
   }
 }
+
+/**
+ * Reads a markdown planning file from the REPL root `agent-plans` directory.
+ * @param {string} filename Planning file name to read.
+ * @returns {string} The contents of the planning file.
+ */
+export function readPlan(filename: string): string {
+  const rootDir = getGlobalReplRootDir();
+  const plansDirectoryPath = path.join(rootDir, "agent-plans");
+  const planningFilePath = path.join(plansDirectoryPath, filename);
+
+  if (!fs.existsSync(plansDirectoryPath) || !fs.existsSync(planningFilePath)) {
+    throw new Error("The plan does not exist");
+  }
+
+  return fs.readFileSync(planningFilePath, "utf-8");
+}
