@@ -13,7 +13,13 @@ export type SafetyMode = "safe" | "unsafe";
 /**
  * Permission token values accepted in agent settings.
  */
-export type PermissionToken = "read" | "write" | "scripts" | "spawn_agent";
+export type PermissionToken =
+  | "read"
+  | "write"
+  | "scripts"
+  | "spawn_agent"
+  | "read_plan"
+  | "write_plan";
 
 /**
  * Raw per-agent settings shape as persisted in JSON profiles.

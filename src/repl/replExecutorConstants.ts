@@ -49,7 +49,14 @@ export const FILE_TYPES: Array<"file" | "directory"> = ["file", "directory"];
 /**
  * Supported agent permission tokens for config mutation commands.
  */
-export const PERMISSIONS: PermissionToken[] = ["read", "write", "scripts", "spawn_agent"];
+export const PERMISSIONS: PermissionToken[] = [
+  "read",
+  "write",
+  "scripts",
+  "spawn_agent",
+  "read_plan",
+  "write_plan",
+];
 
 /**
  * One-line help text per slash command.

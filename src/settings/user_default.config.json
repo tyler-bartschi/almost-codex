@@ -28,14 +28,14 @@
         "personality": "default",
         "reasoning": "default",
         "model": "default",
-        "permissions": ["read"]
+        "permissions": ["read", "write_plan"]
       },
       "executor": {
         "description": "Executes the steps or goal provided by an orchestrator or planner, and writes code",
         "personality": "default",
         "reasoning": "default",
         "model": "default",
-        "permissions": ["read", "write", "scripts"]
+        "permissions": ["read", "write", "scripts", "read_plan"]
       }
     },
     "plan": {
