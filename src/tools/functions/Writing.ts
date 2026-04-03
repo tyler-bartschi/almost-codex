@@ -1,23 +1,23 @@
 import * as fs from "fs";
 import * as path from "path";
 import promptSync from "prompt-sync";
-import type { RestrictedObjectLike } from "../utils/ToolUtils";
+import {
+  getGlobalReplConcealedObjects,
+  getGlobalReplProtectedObjects,
+  getGlobalReplRootDir,
+} from "../../global/ReplStateStore";
 import { isRestrictedPath, resolvePathWithinRoot } from "../utils/ToolUtils";
 
 /**
  * Verifies that a target path is not protected or concealed before a write operation proceeds.
  * @param {string} targetPath Absolute target path being modified.
- * @param {string} rootDir Absolute root directory from which access is allowed.
- * @param {RestrictedObjectLike[]} protectedObjects Protected filesystem objects that cannot be modified.
- * @param {RestrictedObjectLike[]} concealedObjects Concealed filesystem objects that cannot be modified.
  * @returns {void} No return value.
  */
-function assertWritableTarget(
-  targetPath: string,
-  rootDir: string,
-  protectedObjects: RestrictedObjectLike[],
-  concealedObjects: RestrictedObjectLike[],
-): void {
+function assertWritableTarget(targetPath: string): void {
+  const rootDir = getGlobalReplRootDir();
+  const protectedObjects = getGlobalReplProtectedObjects();
+  const concealedObjects = getGlobalReplConcealedObjects();
+
   if (isRestrictedPath(targetPath, rootDir, protectedObjects)) {
     throw new Error(`Path is protected and cannot be written: ${targetPath}`);
   }
@@ -45,19 +45,12 @@ function confirmDeletion(targetType: "file" | "directory", targetPath: string): 
 /**
  * Creates a directory within the root directory.
  * @param {string} directoryPath Directory path to create.
- * @param {string} rootDir Absolute root directory from which access is allowed.
- * @param {RestrictedObjectLike[]} protectedObjects Protected filesystem objects that cannot be modified.
- * @param {RestrictedObjectLike[]} concealedObjects Concealed filesystem objects that cannot be modified.
  * @returns {string} The absolute created directory path.
  */
-export function createDirectory(
-  directoryPath: string,
-  rootDir: string,
-  protectedObjects: RestrictedObjectLike[],
-  concealedObjects: RestrictedObjectLike[],
-): string {
+export function createDirectory(directoryPath: string): string {
+  const rootDir = getGlobalReplRootDir();
   const resolvedDirectoryPath = resolvePathWithinRoot(directoryPath, rootDir, false);
-  assertWritableTarget(resolvedDirectoryPath, rootDir, protectedObjects, concealedObjects);
+  assertWritableTarget(resolvedDirectoryPath);
   fs.mkdirSync(resolvedDirectoryPath, { recursive: true });
   return resolvedDirectoryPath;
 }
@@ -65,21 +58,13 @@ export function createDirectory(
 /**
  * Creates a file within the root directory and writes optional contents to it.
  * @param {string} filePath File path to create.
- * @param {string} rootDir Absolute root directory from which access is allowed.
- * @param {RestrictedObjectLike[]} protectedObjects Protected filesystem objects that cannot be modified.
- * @param {RestrictedObjectLike[]} concealedObjects Concealed filesystem objects that cannot be modified.
  * @param {string} [contents=""] Text to write into the created file.
  * @returns {string} The absolute created file path.
  */
-export function createFile(
-  filePath: string,
-  rootDir: string,
-  protectedObjects: RestrictedObjectLike[],
-  concealedObjects: RestrictedObjectLike[],
-  contents: string = "",
-): string {
+export function createFile(filePath: string, contents: string = ""): string {
+  const rootDir = getGlobalReplRootDir();
   const resolvedFilePath = resolvePathWithinRoot(filePath, rootDir, false);
-  assertWritableTarget(resolvedFilePath, rootDir, protectedObjects, concealedObjects);
+  assertWritableTarget(resolvedFilePath);
   fs.mkdirSync(path.dirname(resolvedFilePath), { recursive: true });
   fs.writeFileSync(resolvedFilePath, contents, "utf-8");
   return resolvedFilePath;
@@ -88,21 +73,13 @@ export function createFile(
 /**
  * Appends contents to an existing file within the root directory.
  * @param {string} filePath Existing file path to append to.
- * @param {string} rootDir Absolute root directory from which access is allowed.
- * @param {RestrictedObjectLike[]} protectedObjects Protected filesystem objects that cannot be modified.
- * @param {RestrictedObjectLike[]} concealedObjects Concealed filesystem objects that cannot be modified.
  * @param {string} contents Text to append to the file.
  * @returns {string} The absolute modified file path.
  */
-export function appendToFile(
-  filePath: string,
-  rootDir: string,
-  protectedObjects: RestrictedObjectLike[],
-  concealedObjects: RestrictedObjectLike[],
-  contents: string,
-): string {
+export function appendToFile(filePath: string, contents: string): string {
+  const rootDir = getGlobalReplRootDir();
   const resolvedFilePath = resolvePathWithinRoot(filePath, rootDir);
-  assertWritableTarget(resolvedFilePath, rootDir, protectedObjects, concealedObjects);
+  assertWritableTarget(resolvedFilePath);
   fs.appendFileSync(resolvedFilePath, contents, "utf-8");
   return resolvedFilePath;
 }
@@ -110,19 +87,12 @@ export function appendToFile(
 /**
  * Deletes a file within the root directory.
  * @param {string} filePath File path to delete.
- * @param {string} rootDir Absolute root directory from which access is allowed.
- * @param {RestrictedObjectLike[]} protectedObjects Protected filesystem objects that cannot be modified.
- * @param {RestrictedObjectLike[]} concealedObjects Concealed filesystem objects that cannot be modified.
  * @returns {string} The absolute deleted file path.
  */
-export function deleteFile(
-  filePath: string,
-  rootDir: string,
-  protectedObjects: RestrictedObjectLike[],
-  concealedObjects: RestrictedObjectLike[],
-): string {
+export function deleteFile(filePath: string): string {
+  const rootDir = getGlobalReplRootDir();
   const resolvedFilePath = resolvePathWithinRoot(filePath, rootDir);
-  assertWritableTarget(resolvedFilePath, rootDir, protectedObjects, concealedObjects);
+  assertWritableTarget(resolvedFilePath);
   confirmDeletion("file", resolvedFilePath);
   fs.unlinkSync(resolvedFilePath);
   return resolvedFilePath;
@@ -131,19 +101,12 @@ export function deleteFile(
 /**
  * Deletes a directory recursively within the root directory.
  * @param {string} directoryPath Directory path to delete.
- * @param {string} rootDir Absolute root directory from which access is allowed.
- * @param {RestrictedObjectLike[]} protectedObjects Protected filesystem objects that cannot be modified.
- * @param {RestrictedObjectLike[]} concealedObjects Concealed filesystem objects that cannot be modified.
  * @returns {string} The absolute deleted directory path.
  */
-export function deleteDirectory(
-  directoryPath: string,
-  rootDir: string,
-  protectedObjects: RestrictedObjectLike[],
-  concealedObjects: RestrictedObjectLike[],
-): string {
+export function deleteDirectory(directoryPath: string): string {
+  const rootDir = getGlobalReplRootDir();
   const resolvedDirectoryPath = resolvePathWithinRoot(directoryPath, rootDir);
-  assertWritableTarget(resolvedDirectoryPath, rootDir, protectedObjects, concealedObjects);
+  assertWritableTarget(resolvedDirectoryPath);
   confirmDeletion("directory", resolvedDirectoryPath);
   fs.rmSync(resolvedDirectoryPath, { recursive: true, force: false });
   return resolvedDirectoryPath;

@@ -1,3 +1,4 @@
+import type { Settings } from "./Settings";
 import type { ReplState } from "../repl/replExecutorTypes";
 
 let globalReplState: ReplState | undefined;
@@ -57,6 +58,24 @@ export function getGlobalReplRootDir(): ReplState["rootDir"] {
  */
 export function getGlobalReplSettings(): ReplState["settings"] {
   return requireGlobalReplState().settings;
+}
+
+/**
+ * Returns the protected filesystem objects from the active global REPL settings.
+ * @returns {Settings["protectedObjects"]} The active protected objects list.
+ * @throws {Error} Thrown when no global REPL state has been stored.
+ */
+export function getGlobalReplProtectedObjects(): Settings["protectedObjects"] {
+  return getGlobalReplSettings().protectedObjects;
+}
+
+/**
+ * Returns the concealed filesystem objects from the active global REPL settings.
+ * @returns {Settings["concealedObjects"]} The active concealed objects list.
+ * @throws {Error} Thrown when no global REPL state has been stored.
+ */
+export function getGlobalReplConcealedObjects(): Settings["concealedObjects"] {
+  return getGlobalReplSettings().concealedObjects;
 }
 
 /**

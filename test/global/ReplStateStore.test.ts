@@ -1,7 +1,10 @@
+import { FileSystemObject } from "../../src/global/Settings";
 import type { Settings } from "../../src/global/Settings";
 import {
   clearGlobalReplState,
+  getGlobalReplConcealedObjects,
   getGlobalReplCurrentMode,
+  getGlobalReplProtectedObjects,
   getGlobalReplRootDir,
   getGlobalReplSettings,
   getGlobalReplShouldClear,
@@ -81,6 +84,26 @@ describe("ReplStateStore", () => {
     setGlobalReplState(createReplStateFixture({ settings }));
 
     expect(getGlobalReplSettings()).toBe(settings);
+  });
+
+  it("returns the protected objects from the stored repl settings", () => {
+    const settings: Pick<Settings, "protectedObjects" | "concealedObjects"> = {
+      protectedObjects: [new FileSystemObject("protected.txt", "file")],
+      concealedObjects: [],
+    };
+    setGlobalReplState(createReplStateFixture({ settings: settings as Settings }));
+
+    expect(getGlobalReplProtectedObjects()).toBe(settings.protectedObjects);
+  });
+
+  it("returns the concealed objects from the stored repl settings", () => {
+    const settings: Pick<Settings, "protectedObjects" | "concealedObjects"> = {
+      protectedObjects: [],
+      concealedObjects: [new FileSystemObject("secret", "directory")],
+    };
+    setGlobalReplState(createReplStateFixture({ settings: settings as Settings }));
+
+    expect(getGlobalReplConcealedObjects()).toBe(settings.concealedObjects);
   });
 
   it("returns the shouldExit flag from the stored repl state", () => {

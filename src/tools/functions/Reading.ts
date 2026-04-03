@@ -1,7 +1,19 @@
 import * as fs from "fs";
 import * as path from "path";
+import {
+  getGlobalReplConcealedObjects,
+  getGlobalReplRootDir,
+} from "../../global/ReplStateStore";
 import type { RestrictedObjectLike } from "../utils/ToolUtils";
 import { isRestrictedPath, resolvePathWithinRoot } from "../utils/ToolUtils";
+
+/**
+ * Returns the root directory and concealed objects from the active REPL state.
+ * @returns {[string, RestrictedObjectLike[]]} The active root directory and concealed objects tuple.
+ */
+function getReadingContext(): [string, RestrictedObjectLike[]] {
+  return [getGlobalReplRootDir(), getGlobalReplConcealedObjects()];
+}
 
 /**
  * Reads a file and returns its contents as a UTF-8 string.
@@ -35,14 +47,10 @@ export function readDirectory(directoryPath: string): string {
 
 /**
  * Lists the visible file tree beneath a root directory as a formatted string.
- * @param {string} rootDir Absolute root directory from which access is allowed.
- * @param {RestrictedObjectLike[]} concealedObjects Concealed filesystem objects that cannot be exposed.
  * @returns {string} A formatted tree representation rooted at `rootDir`.
  */
-export function listDirectoryTree(
-  rootDir: string,
-  concealedObjects: RestrictedObjectLike[],
-): string {
+export function listDirectoryTree(): string {
+  const [rootDir, concealedObjects] = getReadingContext();
   const resolvedRootDir = resolvePathWithinRoot(".", rootDir);
   const treeLines = [`${path.basename(resolvedRootDir) || resolvedRootDir}/`];
 
@@ -87,15 +95,10 @@ export function listDirectoryTree(
 /**
  * Reads a file or directory after enforcing concealment rules.
  * @param {string} targetPath File or directory path to read.
- * @param {string} rootDir Absolute root directory from which access is allowed.
- * @param {ConcealedObjectLike[]} concealedObjects Concealed filesystem objects that cannot be read.
  * @returns {string} The file contents or concatenated directory contents.
  */
-export function readContext(
-  targetPath: string,
-  rootDir: string,
-  concealedObjects: RestrictedObjectLike[],
-): string {
+export function readContext(targetPath: string): string {
+  const [rootDir, concealedObjects] = getReadingContext();
   const resolvedTargetPath = resolvePathWithinRoot(targetPath, rootDir);
 
   if (isRestrictedPath(resolvedTargetPath, rootDir, concealedObjects)) {
@@ -113,15 +116,10 @@ export function readContext(
 /**
  * Recursively finds all files or directories whose base name matches the requested name.
  * @param {string} name File or directory name to match.
- * @param {string} rootDir Absolute root directory from which to search.
- * @param {RestrictedObjectLike[]} concealedObjects Concealed filesystem objects that cannot be exposed.
  * @returns {string[]} Relative paths from the root directory for every matching filesystem object.
  */
-export function findLocation(
-  name: string,
-  rootDir: string,
-  concealedObjects: RestrictedObjectLike[],
-): string[] {
+export function findLocation(name: string): string[] {
+  const [rootDir, concealedObjects] = getReadingContext();
   const resolvedRootDir = resolvePathWithinRoot(".", rootDir);
 
   const matches: string[] = [];

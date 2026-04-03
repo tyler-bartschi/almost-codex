@@ -1,7 +1,13 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import type { Settings } from "../../../src/global/Settings";
 import { FileSystemObject } from "../../../src/global/Settings";
+import {
+  clearGlobalReplState,
+  setGlobalReplState,
+} from "../../../src/global/ReplStateStore";
+import type { ReplState } from "../../../src/repl/replExecutorTypes";
 import {
   findLocation,
   listDirectoryTree,
@@ -19,14 +25,41 @@ function createTempWorkspace(prefix: string): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
+/**
+ * Stores a REPL state fixture for reading tool tests.
+ * @param {string} rootDir Root directory to expose through the store.
+ * @param {FileSystemObject[]} [concealedObjects=[]] Concealed objects to expose through settings.
+ * @returns {void} Does not return a value.
+ */
+function setReadingReplState(
+  rootDir: string,
+  concealedObjects: FileSystemObject[] = [],
+): void {
+  const settings: Pick<Settings, "protectedObjects" | "concealedObjects"> = {
+    protectedObjects: [],
+    concealedObjects,
+  };
+  const replState: ReplState = {
+    currentMode: "code",
+    rootDir,
+    settings: settings as Settings,
+    shouldExit: false,
+    shouldClear: false,
+  };
+
+  setGlobalReplState(replState);
+}
+
 describe("Reading tools", () => {
   let tempRoot: string;
 
   beforeEach(() => {
     tempRoot = createTempWorkspace("reading-tools-");
+    setReadingReplState(tempRoot);
   });
 
   afterEach(() => {
+    clearGlobalReplState();
     fs.rmSync(tempRoot, { recursive: true, force: true });
   });
 
@@ -53,16 +86,18 @@ describe("Reading tools", () => {
     const filePath = path.join(tempRoot, "visible.txt");
     fs.writeFileSync(filePath, "visible", "utf-8");
 
-    expect(readContext(filePath, tempRoot, [])).toBe("visible");
+    expect(readContext(filePath)).toBe("visible");
   });
 
   it("rejects a path when it exactly matches a concealed object", () => {
     const filePath = path.join(tempRoot, "secret.txt");
     fs.writeFileSync(filePath, "hidden", "utf-8");
 
-    expect(() =>
-      readContext(filePath, tempRoot, [new FileSystemObject(filePath, "file")]),
-    ).toThrow(`Path is concealed and cannot be read: ${filePath}`);
+    setReadingReplState(tempRoot, [new FileSystemObject(filePath, "file")]);
+
+    expect(() => readContext(filePath)).toThrow(
+      `Path is concealed and cannot be read: ${filePath}`,
+    );
   });
 
   it("rejects a path when an absolute request is inside a relative concealed directory", () => {
@@ -76,11 +111,13 @@ describe("Reading tools", () => {
     process.chdir(projectRoot);
 
     try {
-      expect(() =>
-        readContext(filePath, projectRoot, [
-          new FileSystemObject(path.join("src", "secret"), "directory"),
-        ]),
-      ).toThrow(`Path is concealed and cannot be read: ${filePath}`);
+      setReadingReplState(projectRoot, [
+        new FileSystemObject(path.join("src", "secret"), "directory"),
+      ]);
+
+      expect(() => readContext(filePath)).toThrow(
+        `Path is concealed and cannot be read: ${filePath}`,
+      );
     } finally {
       process.chdir(originalCwd);
     }
@@ -92,7 +129,9 @@ describe("Reading tools", () => {
     const nestedRoot = path.join(tempRoot, "project");
     fs.mkdirSync(nestedRoot);
 
-    expect(() => readContext(filePath, nestedRoot, [])).toThrow(
+    setReadingReplState(nestedRoot);
+
+    expect(() => readContext(filePath)).toThrow(
       `Requested file or directory cannot be found: ${filePath}`,
     );
   });
@@ -100,7 +139,7 @@ describe("Reading tools", () => {
   it("rejects a file request when the target does not exist within the root directory", () => {
     const missingFilePath = path.join(tempRoot, "missing.txt");
 
-    expect(() => readContext(missingFilePath, tempRoot, [])).toThrow(
+    expect(() => readContext(missingFilePath)).toThrow(
       `Requested file or directory cannot be found: ${missingFilePath}`,
     );
   });
@@ -118,11 +157,11 @@ describe("Reading tools", () => {
     fs.writeFileSync(alphaExample, "alpha", "utf-8");
     fs.writeFileSync(betaExample, "beta", "utf-8");
 
-    expect(findLocation("example.md", tempRoot, [])).toEqual([
+    expect(findLocation("example.md")).toEqual([
       path.join("alpha", "example.md"),
       path.join("beta", "nested", "example.md"),
     ]);
-    expect(findLocation("src", tempRoot, [])).toEqual([
+    expect(findLocation("src")).toEqual([
       path.join("packages", "feature", "src"),
       "src",
     ]);
@@ -136,11 +175,19 @@ describe("Reading tools", () => {
     fs.mkdirSync(nestedDirectory, { recursive: true });
     fs.mkdirSync(sourceDirectory, { recursive: true });
     fs.writeFileSync(path.join(tempRoot, "README.md"), "root readme", "utf-8");
-    fs.writeFileSync(path.join(docsDirectory, "overview.md"), "overview", "utf-8");
+    fs.writeFileSync(
+      path.join(docsDirectory, "overview.md"),
+      "overview",
+      "utf-8",
+    );
     fs.writeFileSync(path.join(nestedDirectory, "intro.md"), "intro", "utf-8");
-    fs.writeFileSync(path.join(sourceDirectory, "index.ts"), "export {};", "utf-8");
+    fs.writeFileSync(
+      path.join(sourceDirectory, "index.ts"),
+      "export {};",
+      "utf-8",
+    );
 
-    expect(listDirectoryTree(tempRoot, [])).toBe(
+    expect(listDirectoryTree()).toBe(
       `${path.basename(tempRoot)}/\n` +
         "├── docs/\n" +
         "│   ├── guides/\n" +
@@ -159,16 +206,26 @@ describe("Reading tools", () => {
 
     fs.mkdirSync(visibleDirectory, { recursive: true });
     fs.mkdirSync(concealedDirectory, { recursive: true });
-    fs.writeFileSync(path.join(visibleDirectory, "shown.txt"), "shown", "utf-8");
+    fs.writeFileSync(
+      path.join(visibleDirectory, "shown.txt"),
+      "shown",
+      "utf-8",
+    );
     fs.writeFileSync(concealedFile, "hidden", "utf-8");
-    fs.writeFileSync(path.join(concealedDirectory, "secret.txt"), "secret", "utf-8");
+    fs.writeFileSync(
+      path.join(concealedDirectory, "secret.txt"),
+      "secret",
+      "utf-8",
+    );
 
-    expect(
-      listDirectoryTree(tempRoot, [
-        new FileSystemObject(path.join("visible", "hidden.txt"), "file"),
-        new FileSystemObject("secret", "directory"),
-      ]),
-    ).toBe(`${path.basename(tempRoot)}/\n└── visible/\n    └── shown.txt`);
+    setReadingReplState(tempRoot, [
+      new FileSystemObject(path.join("visible", "hidden.txt"), "file"),
+      new FileSystemObject("secret", "directory"),
+    ]);
+
+    expect(listDirectoryTree()).toBe(
+      `${path.basename(tempRoot)}/\n└── visible/\n    └── shown.txt`,
+    );
   });
 
   it("does not return paths for concealed objects", () => {
@@ -181,15 +238,17 @@ describe("Reading tools", () => {
     fs.writeFileSync(visibleExample, "visible", "utf-8");
     fs.writeFileSync(concealedExample, "concealed", "utf-8");
 
-    expect(
-      findLocation("example.md", tempRoot, [
-        new FileSystemObject(path.join("beta", "nested"), "directory"),
-      ]),
-    ).toEqual([path.join("alpha", "example.md")]);
+    setReadingReplState(tempRoot, [
+      new FileSystemObject(path.join("beta", "nested"), "directory"),
+    ]);
+
+    expect(findLocation("example.md")).toEqual([
+      path.join("alpha", "example.md"),
+    ]);
   });
 
   it("rejects a findLocation request when no matching file or directory exists", () => {
-    expect(() => findLocation("missing.txt", tempRoot, [])).toThrow(
+    expect(() => findLocation("missing.txt")).toThrow(
       "Requested file or directory cannot be found: missing.txt",
     );
   });
