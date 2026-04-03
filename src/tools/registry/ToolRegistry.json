@@ -133,8 +133,7 @@
         }
       },
       "required": [
-        "filePath",
-        "contents"
+        "filePath"
       ],
       "additionalProperties": false
     },

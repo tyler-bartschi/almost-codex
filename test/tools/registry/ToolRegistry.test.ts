@@ -66,7 +66,7 @@ describe("ToolRegistry", () => {
             },
           },
         },
-        required: ["filePath", "contents"],
+        required: ["filePath"],
         additionalProperties: false,
       },
       {

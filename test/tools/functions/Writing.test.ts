@@ -98,6 +98,15 @@ describe("Writing tools", () => {
     expect(fs.readFileSync(createdPath, "utf-8")).toBe("write tests");
   });
 
+  it("creates a file with empty contents when no contents are provided", () => {
+    const filePath = path.join("notes", "empty.txt");
+
+    const createdPath = createFile(filePath);
+
+    expect(createdPath).toBe(path.join(tempRoot, "notes", "empty.txt"));
+    expect(fs.readFileSync(createdPath, "utf-8")).toBe("");
+  });
+
   it("appends contents to an existing file without overwriting existing contents", () => {
     const filePath = path.join(tempRoot, "log.txt");
     fs.writeFileSync(filePath, "first line", "utf-8");
