@@ -47,13 +47,21 @@ function isFunctionToolCall(item: ResponseOutputItem): item is ResponseFunctionT
   return item.type === "function_call";
 }
 
-export interface RunAgentParams {
+export interface SpawnAgentParams {
   client: OpenAI;
   model: string;
   reasoning: Exclude<ReasoningEffort, null>;
   history: ResponseInput;
   tools: Tool[];
 }
+
+export type SpawnableAgentName =
+  | "executor"
+  | "planner"
+  | "documenter"
+  | "expander"
+  | "step_generator"
+  | "synthesizer";
 
 /**
  * Runs a tool-capable agent loop using the Responses API.
@@ -62,7 +70,7 @@ export interface RunAgentParams {
  * calls. Function calls are executed via `runTool`, then their outputs are fed
  * back into `history` for the next iteration.
  *
- * @param {RunAgentParams} params Agent execution inputs.
+ * @param {SpawnAgentParams} params Agent execution inputs.
  * @param {OpenAI} params.client OpenAI client instance used for API requests.
  * @param {string} params.model Model name to call.
  * @param {Exclude<ReasoningEffort, null>} params.reasoning Reasoning effort sent to the model.
@@ -70,13 +78,13 @@ export interface RunAgentParams {
  * @param {Tool[]} params.tools Available function/tool definitions.
  * @returns {Promise<string>} The final assistant text response.
  */
-export async function runAgent({
+async function _spawnAgent({
   client,
   model,
   reasoning,
   history,
   tools,
-}: RunAgentParams): Promise<string> {
+}: SpawnAgentParams): Promise<string> {
   while (true) {
     const response = await client.responses.create({
       model,
@@ -130,4 +138,21 @@ export async function runAgent({
       return response.output_text;
     }
   }
+}
+
+/**
+ * Starts a named agent with the provided prompt.
+ *
+ * @param {SpawnableAgentName} agentName The agent variant to run.
+ * @param {string} prompt The prompt text to send to the selected agent.
+ * @returns {Promise<string>} The eventual agent response.
+ */
+export async function spawnAgent(
+  agentName: SpawnableAgentName,
+  prompt: string,
+): Promise<string> {
+  void agentName;
+  void prompt;
+
+  throw new Error("spawnAgent is not implemented yet.");
 }

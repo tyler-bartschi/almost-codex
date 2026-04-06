@@ -38,3 +38,6 @@ prompt: |
   When giving the planning file to an executor, please do so in this format:
   Planning file name: {filename}
   This is what the executor is expecting.
+
+  When calling the spawnAgent tool, the agentName parameter should be the name of the type of agent you are spawning ("planner" or "executor") and 
+  the prompt should be any instructions that the agent needs, like the filename for the executor agent.
