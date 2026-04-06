@@ -1,7 +1,7 @@
 import { requireGlobalReplState } from "../global/ReplStateStore";
-import type { ParsedCommand } from "./replParser";
-import { MODELS, PERSONALITIES, REASONING } from "./replExecutorConstants";
-import { ReplExecutorSupport } from "./replExecutorSupport";
+import type { ParsedCommand } from "./ReplParser";
+import { MODELS, PERSONALITIES, REASONING } from "./ReplExecutorConstants";
+import { ReplExecutorSupport } from "./ReplExecutorSupport";
 
 /**
  * Handles REPL commands that edit default and per-agent runtime profile values.
@@ -31,7 +31,9 @@ export class ReplProfileCommands {
       return "Usage: /model <model> | /model <agent_id> <model>";
     }
 
-    const target = this.support.resolveTargetSettings(parsedProfile.profileName);
+    const target = this.support.resolveTargetSettings(
+      parsedProfile.profileName,
+    );
     if ("error" in target) {
       return target.error;
     }
@@ -58,7 +60,10 @@ export class ReplProfileCommands {
       return `Invalid model "${model}". Accepted values: ${MODELS.join(", ")}`;
     }
 
-    const resolvedAgent = this.support.resolveAgentIdentifier(agentId, target.settings);
+    const resolvedAgent = this.support.resolveAgentIdentifier(
+      agentId,
+      target.settings,
+    );
     if ("error" in resolvedAgent) {
       return resolvedAgent.error;
     }
@@ -91,7 +96,9 @@ export class ReplProfileCommands {
       return "Usage: /reasoning <reasoning> | /reasoning <agent_id> <reasoning>";
     }
 
-    const target = this.support.resolveTargetSettings(parsedProfile.profileName);
+    const target = this.support.resolveTargetSettings(
+      parsedProfile.profileName,
+    );
     if ("error" in target) {
       return target.error;
     }
@@ -118,7 +125,10 @@ export class ReplProfileCommands {
       return `Invalid reasoning "${reasoning}". Accepted values: ${REASONING.join(", ")}`;
     }
 
-    const resolvedAgent = this.support.resolveAgentIdentifier(agentId, target.settings);
+    const resolvedAgent = this.support.resolveAgentIdentifier(
+      agentId,
+      target.settings,
+    );
     if ("error" in resolvedAgent) {
       return resolvedAgent.error;
     }
@@ -166,7 +176,9 @@ export class ReplProfileCommands {
       return "Usage: /personality <personality> | /personality <agent_id> <personality>";
     }
 
-    const target = this.support.resolveTargetSettings(parsedProfile.profileName);
+    const target = this.support.resolveTargetSettings(
+      parsedProfile.profileName,
+    );
     if ("error" in target) {
       return target.error;
     }
@@ -193,7 +205,10 @@ export class ReplProfileCommands {
       return `Invalid personality "${personality}". Accepted values: ${PERSONALITIES.join(", ")}`;
     }
 
-    const resolvedAgent = this.support.resolveAgentIdentifier(agentId, target.settings);
+    const resolvedAgent = this.support.resolveAgentIdentifier(
+      agentId,
+      target.settings,
+    );
     if ("error" in resolvedAgent) {
       return resolvedAgent.error;
     }

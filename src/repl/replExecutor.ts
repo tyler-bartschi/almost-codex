@@ -1,12 +1,12 @@
 import { requireGlobalReplState } from "../global/ReplStateStore";
-import type { ParsedCommand } from "./replParser";
-import { ReplConfigCommands } from "./replConfigCommands";
-import { ReplDisplayCommands } from "./replDisplayCommands";
-import { ReplObjectListCommands } from "./replObjectListCommands";
-import { ReplProfileCommands } from "./replProfileCommands";
-import { ReplExecutorSupport } from "./replExecutorSupport";
+import type { ParsedCommand } from "./ReplParser";
+import { ReplConfigCommands } from "./ReplConfigCommands";
+import { ReplDisplayCommands } from "./ReplDisplayCommands";
+import { ReplObjectListCommands } from "./ReplObjectListCommands";
+import { ReplProfileCommands } from "./ReplProfileCommands";
+import { ReplExecutorSupport } from "./ReplExecutorSupport";
 
-export type { ReplState } from "./replExecutorTypes";
+export type { ReplState } from "./ReplExecutorTypes";
 
 /**
  * Executes parsed REPL slash commands and applies validated changes to
@@ -21,7 +21,9 @@ export class ReplExecutor {
 
   private readonly configCommands = new ReplConfigCommands(this.support);
 
-  private readonly objectListCommands = new ReplObjectListCommands(this.support);
+  private readonly objectListCommands = new ReplObjectListCommands(
+    this.support,
+  );
 
   /**
    * Executes a parsed slash command against the current REPL state.

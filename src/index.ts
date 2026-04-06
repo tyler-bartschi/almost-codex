@@ -10,8 +10,9 @@ import {
   setGlobalReplState,
 } from "./global/ReplStateStore";
 import { Settings, type AgentMode } from "./global/Settings";
-import { ReplExecutor, type ReplState } from "./repl/replExecutor";
-import { ReplParser } from "./repl/replParser";
+import { ReplExecutor, type ReplState } from "./repl/ReplExecutor";
+import { runReplGitSafeCheck } from "./repl/ReplGitSafeCheck";
+import { ReplParser } from "./repl/ReplParser";
 
 dotenv.config({ quiet: true });
 
@@ -102,7 +103,9 @@ function readPromptLine(promptLabel: string): Promise<string> {
     const render = (): void => {
       readline.cursorTo(stdout, 0);
       readline.clearLine(stdout, 0);
-      stdout.write(`${ANSI_WHITE}${promptLabel}${colorizeLiveInput(buffer)}${ANSI_RESET}`);
+      stdout.write(
+        `${ANSI_WHITE}${promptLabel}${colorizeLiveInput(buffer)}${ANSI_RESET}`,
+      );
     };
 
     const cleanup = (): void => {
@@ -159,6 +162,27 @@ function shutdownInput(): void {
 }
 
 /**
+ * Runs the startup git-safe guard and handles any startup failure gracefully.
+ *
+ * @param {ReplState} initialState Initial REPL state containing settings and root directory.
+ * @returns {boolean} `true` when startup can continue; otherwise `false`.
+ */
+function runStartupChecks(initialState: ReplState): boolean {
+  try {
+    if (runReplGitSafeCheck(initialState.settings, initialState.rootDir)) {
+      return true;
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(message);
+  }
+
+  shutdownInput();
+  process.exitCode = 1;
+  return false;
+}
+
+/**
  * Starts the interactive REPL loop.
  *
  * Uses `ReplParser` to parse user input into commands and `ReplExecutor` to
@@ -172,7 +196,11 @@ export async function main(): Promise<void> {
 
   const parser = new ReplParser();
   const executor = new ReplExecutor();
-  setGlobalReplState(createInitialState(process.cwd()));
+  const initialState = createInitialState(process.cwd());
+  setGlobalReplState(initialState);
+  if (!runStartupChecks(initialState)) {
+    return;
+  }
   initializeGlobalPromptStore(process.cwd());
 
   while (true) {

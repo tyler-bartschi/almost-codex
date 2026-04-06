@@ -10,7 +10,7 @@ import {
   type Personalities,
   Settings,
 } from "../global/Settings";
-import type { ParsedCommand } from "./replParser";
+import type { ParsedCommand } from "./ReplParser";
 import {
   FILE_TYPES,
   MODELS,
@@ -20,12 +20,12 @@ import {
   REASONING,
   SAFETY_MODES,
   SETTINGS_DIR,
-} from "./replExecutorConstants";
+} from "./ReplExecutorConstants";
 import type {
   PermissionToken,
   RawSettingsFile,
   SafetyMode,
-} from "./replExecutorTypes";
+} from "./ReplExecutorTypes";
 
 /**
  * Shared validation, parsing, and settings-profile utility operations used by
@@ -119,16 +119,21 @@ export class ReplExecutorSupport {
         setting: "personality" | "reasoning" | "model" | "permissions";
       }
     | { error: string } {
-    const match = /^agents\.(ask|code|plan|test|document)\.([^.]+)\.(personality|reasoning|model|permissions)$/.exec(
-      field,
-    );
+    const match =
+      /^agents\.(ask|code|plan|test|document)\.([^.]+)\.(personality|reasoning|model|permissions)$/.exec(
+        field,
+      );
     if (!match) {
       return { error: "invalid agent field" };
     }
     return {
       mode: match[1] as AgentMode,
       agentName: match[2] as string,
-      setting: match[3] as "personality" | "reasoning" | "model" | "permissions",
+      setting: match[3] as
+        | "personality"
+        | "reasoning"
+        | "model"
+        | "permissions",
     };
   }
 
@@ -166,7 +171,9 @@ export class ReplExecutorSupport {
 
     if ("type" in parsedJson) {
       if (parsedJson.type !== "file" && parsedJson.type !== "directory") {
-        return { error: `Invalid type "${String(parsedJson.type)}". Accepted: ${FILE_TYPES.join(", ")}` };
+        return {
+          error: `Invalid type "${String(parsedJson.type)}". Accepted: ${FILE_TYPES.join(", ")}`,
+        };
       }
       return { value: new FileSystemObject(parsedJson.path, parsedJson.type) };
     }
@@ -186,8 +193,14 @@ export class ReplExecutorSupport {
   ): { mode: AgentMode; agentName: string } | { error: string } {
     if (identifier.includes(".")) {
       const [modeCandidate, agentName] = identifier.split(".", 2);
-      if (modeCandidate === undefined || !this.isMode(modeCandidate) || !agentName) {
-        return { error: `Invalid agent identifier "${identifier}". Use <mode>.<agent>.` };
+      if (
+        modeCandidate === undefined ||
+        !this.isMode(modeCandidate) ||
+        !agentName
+      ) {
+        return {
+          error: `Invalid agent identifier "${identifier}". Use <mode>.<agent>.`,
+        };
       }
 
       const agent = settings.agentSettings[modeCandidate][agentName];
@@ -245,7 +258,9 @@ export class ReplExecutorSupport {
     }
 
     if (profileFlag === "system_default") {
-      return { error: "Error: protected-resource error. Cannot modify system_default." };
+      return {
+        error: "Error: protected-resource error. Cannot modify system_default.",
+      };
     }
 
     return { profileName: profileFlag };
@@ -277,7 +292,9 @@ export class ReplExecutorSupport {
    * @param profileName Profile name to load from disk.
    * @returns Loaded settings or a profile-not-found error.
    */
-  public loadSettingsProfile(profileName: string): { settings: Settings } | { error: string } {
+  public loadSettingsProfile(
+    profileName: string,
+  ): { settings: Settings } | { error: string } {
     try {
       return { settings: Settings.fromSettingsFile(profileName) };
     } catch {
@@ -308,7 +325,9 @@ export class ReplExecutorSupport {
       return { profileName, nextIndex: startIndex + 2 };
     }
 
-    return { error: `Invalid config type "${String(configType)}". Accepted values: default, named` };
+    return {
+      error: `Invalid config type "${String(configType)}". Accepted values: default, named`,
+    };
   }
 
   /**
@@ -362,7 +381,9 @@ export class ReplExecutorSupport {
    * @param configName Profile name to read.
    * @returns Parsed raw settings data or a not-found error.
    */
-  public readRawSettings(configName: string): { data: RawSettingsFile } | { error: string } {
+  public readRawSettings(
+    configName: string,
+  ): { data: RawSettingsFile } | { error: string } {
     const configPath = this.configPath(configName);
     if (!fs.existsSync(configPath)) {
       return { error: `Profile not found: ${configName}` };

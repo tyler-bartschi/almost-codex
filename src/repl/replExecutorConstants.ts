@@ -5,7 +5,7 @@ import type {
   OpenAIReasoningMode,
   Personalities,
 } from "../global/Settings";
-import type { PermissionToken, SafetyMode } from "./replExecutorTypes";
+import type { PermissionToken, SafetyMode } from "./ReplExecutorTypes";
 
 /**
  * Supported runtime agent modes exposed by REPL commands.
@@ -23,7 +23,12 @@ export const PERSONALITIES: Personalities[] = [
 /**
  * Supported reasoning levels for defaults and agent overrides.
  */
-export const REASONING: OpenAIReasoningMode[] = ["minimal", "low", "medium", "high"];
+export const REASONING: OpenAIReasoningMode[] = [
+  "minimal",
+  "low",
+  "medium",
+  "high",
+];
 /**
  * Supported model identifiers for defaults and agent overrides.
  */
@@ -105,11 +110,9 @@ export const COMMAND_DETAILS: Record<string, string> = {
   chat: "/chat\nSwitches mode to ask.",
   plan: "/plan\nSwitches mode to plan.",
   code: "/code\nSwitches mode to code.",
-  test:
-    "/test [<prompt>] [--non-interactive]\nRuns one-off test workflow and returns results (placeholder behavior for now).",
+  test: "/test [<prompt>] [--non-interactive]\nRuns one-off test workflow and returns results (placeholder behavior for now).",
   document: "/document\nSwitches mode to document.",
-  git:
-    "/git --safe\n/git --unsafe\nSets git_mode on active profile.\nSafe (recommended): commits all uncommitted changes before working, when possible.\nUnsafe: does not perform this pre-work commit.",
+  git: "/git --safe\n/git --unsafe\nSets git_mode on active profile.\nSafe (recommended): commits all uncommitted changes before working, when possible.\nUnsafe: does not perform this pre-work commit.",
   script:
     "/script --safe\n/script --unsafe\nSets script_mode on active profile.\nSafe (recommended): asks permission before running any bash script requested by the agent.\nUnsafe: runs requested bash scripts without asking permission.",
   status:

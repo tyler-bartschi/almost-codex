@@ -1,19 +1,16 @@
 import * as fs from "fs";
 import { requireGlobalReplState } from "../global/ReplStateStore";
-import {
-  type AddRemoveOperation,
-  type Settings,
-} from "../global/Settings";
+import { type AddRemoveOperation, type Settings } from "../global/Settings";
 import {
   MODELS,
   PERMISSIONS,
   PERSONALITIES,
   REASONING,
   SAFETY_MODES,
-} from "./replExecutorConstants";
-import { ReplExecutorSupport } from "./replExecutorSupport";
-import type { RawSettingsFile } from "./replExecutorTypes";
-import type { ParsedCommand } from "./replParser";
+} from "./ReplExecutorConstants";
+import { ReplExecutorSupport } from "./ReplExecutorSupport";
+import type { RawSettingsFile } from "./ReplExecutorTypes";
+import type { ParsedCommand } from "./ReplParser";
 
 /**
  * Handles `/config` subcommands for profile listing, CRUD, and field mutation.
@@ -67,9 +64,12 @@ export class ReplConfigCommands {
     }
 
     const state = requireGlobalReplState();
-    const names = this.support.listConfigNames().filter((name) => name !== "system_default");
+    const names = this.support
+      .listConfigNames()
+      .filter((name) => name !== "system_default");
     const lines = names.map((name) => {
-      const activeMarker = name === state.settings.configName ? " (active)" : "";
+      const activeMarker =
+        name === state.settings.configName ? " (active)" : "";
       return `${name}${activeMarker}`;
     });
     return lines.join("\n");
@@ -164,7 +164,10 @@ export class ReplConfigCommands {
       return `Error: profile "${profileName}" already exists.`;
     }
 
-    if (command.flags.size > 1 || (command.flags.size === 1 && !command.flags.has("from"))) {
+    if (
+      command.flags.size > 1 ||
+      (command.flags.size === 1 && !command.flags.has("from"))
+    ) {
       return "Usage: /config create named <name> [--from default|<source_name>]";
     }
 
@@ -196,7 +199,11 @@ export class ReplConfigCommands {
    * @returns Success or usage/profile validation message.
    */
   private configDelete(command: ParsedCommand): string {
-    if (command.args.length !== 3 || command.args[1] !== "named" || command.flags.size > 0) {
+    if (
+      command.args.length !== 3 ||
+      command.args[1] !== "named" ||
+      command.flags.size > 0
+    ) {
       return "Usage: /config delete named <name>";
     }
 
@@ -246,7 +253,12 @@ export class ReplConfigCommands {
 
     const fieldFlag = command.flags.get("field");
     const valueFlag = command.flags.get("value");
-    if (fieldFlag === undefined || valueFlag === undefined || fieldFlag === true || valueFlag === true) {
+    if (
+      fieldFlag === undefined ||
+      valueFlag === undefined ||
+      fieldFlag === true ||
+      valueFlag === true
+    ) {
       return "Usage: /config set <type> [<name>] --field <field> --value <value>";
     }
 
@@ -254,7 +266,9 @@ export class ReplConfigCommands {
       return "Error: protected-resource error. Cannot modify system_default.";
     }
 
-    const targetSettingsLoad = this.support.loadSettingsProfile(parseTarget.profileName);
+    const targetSettingsLoad = this.support.loadSettingsProfile(
+      parseTarget.profileName,
+    );
     if ("error" in targetSettingsLoad) {
       return targetSettingsLoad.error;
     }
@@ -315,7 +329,9 @@ export class ReplConfigCommands {
     if ("error" in systemRaw) {
       return systemRaw.error;
     }
-    const targetRawResult = this.support.readRawSettings(parseTarget.profileName);
+    const targetRawResult = this.support.readRawSettings(
+      parseTarget.profileName,
+    );
     if ("error" in targetRawResult) {
       return targetRawResult.error;
     }
@@ -331,7 +347,11 @@ export class ReplConfigCommands {
       return `Reverted entire profile "${parseTarget.profileName}" from system_default.`;
     }
 
-    const revertedField = this.copyFieldFromSource(targetRaw, systemRaw.data, fieldFlag);
+    const revertedField = this.copyFieldFromSource(
+      targetRaw,
+      systemRaw.data,
+      fieldFlag,
+    );
     if ("error" in revertedField) {
       return revertedField.error;
     }
@@ -357,10 +377,15 @@ export class ReplConfigCommands {
   ): { ok: true } | { error: string } {
     if (field === "default_personality") {
       if (operation !== undefined) {
-        return { error: "Flag mismatch: --add/--remove not allowed for default_personality." };
+        return {
+          error:
+            "Flag mismatch: --add/--remove not allowed for default_personality.",
+        };
       }
       if (!this.support.isPersonality(value)) {
-        return { error: `Invalid value "${value}". Accepted: ${PERSONALITIES.join(", ")}` };
+        return {
+          error: `Invalid value "${value}". Accepted: ${PERSONALITIES.join(", ")}`,
+        };
       }
       settings.defaultPersonality = value;
       return { ok: true };
@@ -368,10 +393,15 @@ export class ReplConfigCommands {
 
     if (field === "default_reasoning") {
       if (operation !== undefined) {
-        return { error: "Flag mismatch: --add/--remove not allowed for default_reasoning." };
+        return {
+          error:
+            "Flag mismatch: --add/--remove not allowed for default_reasoning.",
+        };
       }
       if (!this.support.isReasoning(value)) {
-        return { error: `Invalid value "${value}". Accepted: ${REASONING.join(", ")}` };
+        return {
+          error: `Invalid value "${value}". Accepted: ${REASONING.join(", ")}`,
+        };
       }
       settings.defaultReasoning = value;
       return { ok: true };
@@ -379,10 +409,14 @@ export class ReplConfigCommands {
 
     if (field === "default_model") {
       if (operation !== undefined) {
-        return { error: "Flag mismatch: --add/--remove not allowed for default_model." };
+        return {
+          error: "Flag mismatch: --add/--remove not allowed for default_model.",
+        };
       }
       if (!this.support.isModel(value)) {
-        return { error: `Invalid value "${value}". Accepted: ${MODELS.join(", ")}` };
+        return {
+          error: `Invalid value "${value}". Accepted: ${MODELS.join(", ")}`,
+        };
       }
       settings.defaultModel = value;
       return { ok: true };
@@ -390,10 +424,14 @@ export class ReplConfigCommands {
 
     if (field === "git_mode") {
       if (operation !== undefined) {
-        return { error: "Flag mismatch: --add/--remove not allowed for git_mode." };
+        return {
+          error: "Flag mismatch: --add/--remove not allowed for git_mode.",
+        };
       }
       if (!this.support.isSafetyMode(value)) {
-        return { error: `Invalid value "${value}". Accepted: ${SAFETY_MODES.join(", ")}` };
+        return {
+          error: `Invalid value "${value}". Accepted: ${SAFETY_MODES.join(", ")}`,
+        };
       }
       settings.gitMode = value;
       return { ok: true };
@@ -401,10 +439,14 @@ export class ReplConfigCommands {
 
     if (field === "script_mode") {
       if (operation !== undefined) {
-        return { error: "Flag mismatch: --add/--remove not allowed for script_mode." };
+        return {
+          error: "Flag mismatch: --add/--remove not allowed for script_mode.",
+        };
       }
       if (!this.support.isSafetyMode(value)) {
-        return { error: `Invalid value "${value}". Accepted: ${SAFETY_MODES.join(", ")}` };
+        return {
+          error: `Invalid value "${value}". Accepted: ${SAFETY_MODES.join(", ")}`,
+        };
       }
       settings.scriptMode = value;
       return { ok: true };
@@ -412,7 +454,9 @@ export class ReplConfigCommands {
 
     if (field === "protected" || field === "concealed") {
       if (operation === undefined) {
-        return { error: `Missing required flag for "${field}". Use --add or --remove.` };
+        return {
+          error: `Missing required flag for "${field}". Use --add or --remove.`,
+        };
       }
       const parsed = this.support.parsePathOrObjectValue(value);
       if ("error" in parsed) {
@@ -430,10 +474,14 @@ export class ReplConfigCommands {
     if (!("error" in parsedAgentField)) {
       if (parsedAgentField.setting === "permissions") {
         if (operation === undefined) {
-          return { error: `Missing required flag for "${field}". Use --add or --remove.` };
+          return {
+            error: `Missing required flag for "${field}". Use --add or --remove.`,
+          };
         }
         if (!this.support.isPermission(value)) {
-          return { error: `Invalid permission "${value}". Accepted: ${PERMISSIONS.join(", ")}` };
+          return {
+            error: `Invalid permission "${value}". Accepted: ${PERMISSIONS.join(", ")}`,
+          };
         }
         settings.setAgentSetting(
           parsedAgentField.mode,
@@ -486,11 +534,18 @@ export class ReplConfigCommands {
           error: `Invalid value "${value}". Accepted: ${MODELS.join(", ")}, default`,
         };
       }
-      settings.setAgentSetting(parsedAgentField.mode, parsedAgentField.agentName, "model", value);
+      settings.setAgentSetting(
+        parsedAgentField.mode,
+        parsedAgentField.agentName,
+        "model",
+        value,
+      );
       return { ok: true };
     }
 
-    return { error: `Invalid field "${field}". Use /describe config for supported fields.` };
+    return {
+      error: `Invalid field "${field}". Use /describe config for supported fields.`,
+    };
   }
 
   /**
@@ -536,7 +591,9 @@ export class ReplConfigCommands {
 
     const agentField = this.support.parseAgentField(field);
     if ("error" in agentField) {
-      return { error: `Invalid field "${field}". Use /describe config for supported fields.` };
+      return {
+        error: `Invalid field "${field}". Use /describe config for supported fields.`,
+      };
     }
 
     const sourceAgentMode = source.agents[agentField.mode];

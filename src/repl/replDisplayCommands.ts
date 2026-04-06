@@ -1,4 +1,7 @@
-import { getGlobalReplCurrentMode, getGlobalReplSettings } from "../global/ReplStateStore";
+import {
+  getGlobalReplCurrentMode,
+  getGlobalReplSettings,
+} from "../global/ReplStateStore";
 import type { AgentMode } from "../global/Settings";
 import {
   ANSI_BOLD,
@@ -9,9 +12,9 @@ import {
   COMMAND_DETAILS,
   COMMAND_SUMMARIES,
   MODES,
-} from "./replExecutorConstants";
-import { ReplExecutorSupport } from "./replExecutorSupport";
-import type { ParsedCommand } from "./replParser";
+} from "./ReplExecutorConstants";
+import { ReplExecutorSupport } from "./ReplExecutorSupport";
+import type { ParsedCommand } from "./ReplParser";
 
 /**
  * Handles read-only REPL commands that render help and runtime status output.
@@ -84,7 +87,9 @@ export class ReplDisplayCommands {
         lines.push("");
       }
       const agents = settings.agentSettings[mode];
-      lines.push(`${ANSI_BOLD}Mode: ${this.displayModeName(mode)}${ANSI_RESET}`);
+      lines.push(
+        `${ANSI_BOLD}Mode: ${this.displayModeName(mode)}${ANSI_RESET}`,
+      );
       for (const [agentName, agentSetting] of Object.entries(agents)) {
         const effectivePersonality =
           agentSetting.personality === "default"
@@ -121,7 +126,10 @@ export class ReplDisplayCommands {
     const rows: Array<[string, string]> = [
       ["Mode:", getGlobalReplCurrentMode()],
       ["Context window:", "yes"],
-      ["Weekly limit:", "however much you're willing to pay, it's your api key"],
+      [
+        "Weekly limit:",
+        "however much you're willing to pay, it's your api key",
+      ],
     ];
     const labelWidth = rows.reduce(
       (max, [label]) => Math.max(max, label.length),

@@ -1,5 +1,5 @@
 import type { Settings } from "./Settings";
-import type { ReplState } from "../repl/replExecutorTypes";
+import type { ReplState } from "../repl/ReplExecutorTypes";
 
 let globalReplState: ReplState | undefined;
 

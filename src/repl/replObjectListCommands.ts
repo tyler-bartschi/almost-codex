@@ -1,8 +1,8 @@
 import { getGlobalReplSettings } from "../global/ReplStateStore";
 import { FileSystemObject, type AddRemoveOperation } from "../global/Settings";
-import { FILE_TYPES } from "./replExecutorConstants";
-import { ReplExecutorSupport } from "./replExecutorSupport";
-import type { ParsedCommand } from "./replParser";
+import { FILE_TYPES } from "./ReplExecutorConstants";
+import { ReplExecutorSupport } from "./ReplExecutorSupport";
+import type { ParsedCommand } from "./ReplParser";
 
 /**
  * Handles `/protect` and `/conceal` commands for filesystem object lists.
@@ -42,12 +42,14 @@ export class ReplObjectListCommands {
     command: ParsedCommand,
     target: "protected" | "concealed",
   ): string {
-    const usageAll = target === "protected"
-      ? "Usage: /protect <path> [--type file|directory] | /protect --remove <path> [--type file|directory] | /protect --list"
-      : "Usage: /conceal <path> [--type file|directory] | /conceal --remove <path> [--type file|directory] | /conceal --list";
-    const usageMutate = target === "protected"
-      ? "Usage: /protect <path> [--type file|directory] | /protect --remove <path> [--type file|directory]"
-      : "Usage: /conceal <path> [--type file|directory] | /conceal --remove <path> [--type file|directory]";
+    const usageAll =
+      target === "protected"
+        ? "Usage: /protect <path> [--type file|directory] | /protect --remove <path> [--type file|directory] | /protect --list"
+        : "Usage: /conceal <path> [--type file|directory] | /conceal --remove <path> [--type file|directory] | /conceal --list";
+    const usageMutate =
+      target === "protected"
+        ? "Usage: /protect <path> [--type file|directory] | /protect --remove <path> [--type file|directory]"
+        : "Usage: /conceal <path> [--type file|directory] | /conceal --remove <path> [--type file|directory]";
 
     const allowedFlags = new Set(["remove", "list", "type"]);
     for (const flagName of command.flags.keys()) {
@@ -76,10 +78,16 @@ export class ReplObjectListCommands {
       if (objects.length === 0) {
         return "(none)";
       }
-      return objects.map((object) => `${object.path} (${object.type})`).join("\n");
+      return objects
+        .map((object) => `${object.path} (${object.type})`)
+        .join("\n");
     }
 
-    if (removeFlagValue !== undefined && removeFlagValue !== true && command.args.length > 0) {
+    if (
+      removeFlagValue !== undefined &&
+      removeFlagValue !== true &&
+      command.args.length > 0
+    ) {
       return usageMutate;
     }
 
