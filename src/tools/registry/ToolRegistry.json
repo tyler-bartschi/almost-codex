@@ -157,6 +157,27 @@
       "additionalProperties": false
     }
   },
+  "scripts": {
+    "RunTerminal": {
+      "type": "function",
+      "name": "RunTerminal",
+      "description": "Runs a UNIX-based terminal command from the accessible project root after explicit user confirmation. Returns the terminal output as a string.",
+      "strict": true,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "The UNIX-based terminal command to execute from the project root."
+          }
+        }
+      },
+      "required": [
+        "command"
+      ],
+      "additionalProperties": false
+    }
+  },
   "savePlan": {
     "savePlan": {
       "type": "function",

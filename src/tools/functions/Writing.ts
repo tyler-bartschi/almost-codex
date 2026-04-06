@@ -1,12 +1,15 @@
 import * as fs from "fs";
 import * as path from "path";
-import promptSync from "prompt-sync";
 import {
   getGlobalReplConcealedObjects,
   getGlobalReplProtectedObjects,
   getGlobalReplRootDir,
 } from "../../global/ReplStateStore";
-import { isRestrictedPath, resolvePathWithinRoot } from "../utils/ToolUtils";
+import {
+  getUserVerification,
+  isRestrictedPath,
+  resolvePathWithinRoot,
+} from "../utils/ToolUtils";
 
 /**
  * Verifies that a target path is not protected or concealed before a write operation proceeds.
@@ -28,28 +31,17 @@ function assertWritableTarget(targetPath: string): void {
 }
 
 /**
- * Prompts the user to confirm a destructive delete operation.
- * @param {"file" | "directory"} targetType Filesystem object type being deleted.
- * @param {string} targetPath Absolute path of the filesystem object being deleted.
- * @returns {void} No return value.
- */
-function confirmDeletion(targetType: "file" | "directory", targetPath: string): void {
-  const prompt = promptSync({ sigint: true });
-  const response = prompt(`Delete ${targetType} "${targetPath}"? [y/N]: `).trim().toLowerCase();
-
-  if (response !== "y" && response !== "yes") {
-    throw new Error(`Deletion cancelled by user for ${targetType}: ${targetPath}`);
-  }
-}
-
-/**
  * Creates a directory within the root directory.
  * @param {string} directoryPath Directory path to create.
  * @returns {string} The absolute created directory path.
  */
 export function createDirectory(directoryPath: string): string {
   const rootDir = getGlobalReplRootDir();
-  const resolvedDirectoryPath = resolvePathWithinRoot(directoryPath, rootDir, false);
+  const resolvedDirectoryPath = resolvePathWithinRoot(
+    directoryPath,
+    rootDir,
+    false,
+  );
   assertWritableTarget(resolvedDirectoryPath);
   fs.mkdirSync(resolvedDirectoryPath, { recursive: true });
   return resolvedDirectoryPath;
@@ -93,7 +85,10 @@ export function deleteFile(filePath: string): string {
   const rootDir = getGlobalReplRootDir();
   const resolvedFilePath = resolvePathWithinRoot(filePath, rootDir);
   assertWritableTarget(resolvedFilePath);
-  confirmDeletion("file", resolvedFilePath);
+  getUserVerification(
+    `Delete file "${resolvedFilePath}"? [y/N]: `,
+    `Deletion cancelled by user for file: ${resolvedFilePath}`,
+  );
   fs.unlinkSync(resolvedFilePath);
   return resolvedFilePath;
 }
@@ -107,7 +102,10 @@ export function deleteDirectory(directoryPath: string): string {
   const rootDir = getGlobalReplRootDir();
   const resolvedDirectoryPath = resolvePathWithinRoot(directoryPath, rootDir);
   assertWritableTarget(resolvedDirectoryPath);
-  confirmDeletion("directory", resolvedDirectoryPath);
+  getUserVerification(
+    `Delete directory "${resolvedDirectoryPath}"? [y/N]: `,
+    `Deletion cancelled by user for directory: ${resolvedDirectoryPath}`,
+  );
   fs.rmSync(resolvedDirectoryPath, { recursive: true, force: false });
   return resolvedDirectoryPath;
 }

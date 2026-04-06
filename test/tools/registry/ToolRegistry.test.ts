@@ -90,6 +90,79 @@ describe("ToolRegistry", () => {
     ]);
   });
 
+  it("returns an empty read tool list when every read tool is excluded", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(
+      toolRegistry.getReadTools(["listDirectoryTree", "findLocation", "readContext"]),
+    ).toEqual([]);
+  });
+
+  it("excludes only the requested write tool names", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(toolRegistry.getWriteTools(["appendToFile", "createDirectory"])).toEqual([
+      {
+        type: "function",
+        name: "deleteDirectory",
+        description:
+          "Deletes a directory recursively from the accessible project area after user confirmation. Returns the absolute path of the deleted directory.",
+        strict: true,
+        parameters: {
+          type: "object",
+          properties: {
+            directoryPath: {
+              type: "string",
+              description: "The relative path of the directory to delete.",
+            },
+          },
+        },
+        required: ["directoryPath"],
+        additionalProperties: false,
+      },
+      {
+        type: "function",
+        name: "deleteFile",
+        description:
+          "Deletes a file from the accessible project area after user confirmation. Returns the absolute path of the deleted file.",
+        strict: true,
+        parameters: {
+          type: "object",
+          properties: {
+            filePath: {
+              type: "string",
+              description: "The relative path of the file to delete.",
+            },
+          },
+        },
+        required: ["filePath"],
+        additionalProperties: false,
+      },
+      {
+        type: "function",
+        name: "createFile",
+        description:
+          "Creates a file in the accessible project area and writes the provided contents to it. Missing parent directories are created automatically. Returns the absolute path of the created file.",
+        strict: true,
+        parameters: {
+          type: "object",
+          properties: {
+            filePath: {
+              type: "string",
+              description: "The relative path of the file to create.",
+            },
+            contents: {
+              type: "string",
+              description: "The text content to write into the new file.",
+            },
+          },
+        },
+        required: ["filePath"],
+        additionalProperties: false,
+      },
+    ]);
+  });
+
   it("returns save-plan tool definitions without excluded tools", () => {
     const toolRegistry = new ToolRegistry();
 
@@ -119,6 +192,43 @@ describe("ToolRegistry", () => {
     ]);
   });
 
+  it("returns an empty script tool list when the only script tool is excluded", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(toolRegistry.getScriptTools(["RunTerminal"])).toEqual([]);
+  });
+
+  it("returns script tool definitions without excluded tools", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(toolRegistry.getScriptTools()).toEqual([
+      {
+        type: "function",
+        name: "RunTerminal",
+        description:
+          "Runs a UNIX-based terminal command from the accessible project root after explicit user confirmation. Returns the terminal output as a string.",
+        strict: true,
+        parameters: {
+          type: "object",
+          properties: {
+            command: {
+              type: "string",
+              description: "The UNIX-based terminal command to execute from the project root.",
+            },
+          },
+        },
+        required: ["command"],
+        additionalProperties: false,
+      },
+    ]);
+  });
+
+  it("returns an empty save-plan tool list when the save-plan tool is excluded", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(toolRegistry.getSavePlanTools(["savePlan"])).toEqual([]);
+  });
+
   it("returns read-plan tool definitions without excluded tools", () => {
     const toolRegistry = new ToolRegistry();
 
@@ -142,5 +252,11 @@ describe("ToolRegistry", () => {
         additionalProperties: false,
       },
     ]);
+  });
+
+  it("returns an empty read-plan tool list when the read-plan tool is excluded", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(toolRegistry.getReadPlanTools(["readPlan"])).toEqual([]);
   });
 });

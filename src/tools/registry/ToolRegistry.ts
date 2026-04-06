@@ -11,6 +11,7 @@ type ToolCollection = Record<string, ToolDefinition>;
 type ToolRegistryContents = {
   read: ToolCollection;
   write: ToolCollection;
+  scripts: ToolCollection;
   savePlan: ToolCollection;
   readPlan: ToolCollection;
 };
@@ -22,6 +23,7 @@ export class ToolRegistry {
   private readonly toolRegistry: ToolRegistryContents;
   private readonly readTools: ToolCollection;
   private readonly writeTools: ToolCollection;
+  private readonly scriptTools: ToolCollection;
   private readonly savePlanTools: ToolCollection;
   private readonly readPlanTools: ToolCollection;
 
@@ -38,14 +40,17 @@ export class ToolRegistry {
     if (
       parsedRegistry.read === undefined ||
       parsedRegistry.write === undefined ||
+      parsedRegistry.scripts === undefined ||
       parsedRegistry.savePlan === undefined ||
       parsedRegistry.readPlan === undefined ||
       typeof parsedRegistry.read !== "object" ||
       typeof parsedRegistry.write !== "object" ||
+      typeof parsedRegistry.scripts !== "object" ||
       typeof parsedRegistry.savePlan !== "object" ||
       typeof parsedRegistry.readPlan !== "object" ||
       parsedRegistry.read === null ||
       parsedRegistry.write === null ||
+      parsedRegistry.scripts === null ||
       parsedRegistry.savePlan === null ||
       parsedRegistry.readPlan === null
     ) {
@@ -55,11 +60,13 @@ export class ToolRegistry {
     this.toolRegistry = {
       read: parsedRegistry.read as ToolCollection,
       write: parsedRegistry.write as ToolCollection,
+      scripts: parsedRegistry.scripts as ToolCollection,
       savePlan: parsedRegistry.savePlan as ToolCollection,
       readPlan: parsedRegistry.readPlan as ToolCollection,
     };
     this.readTools = this.toolRegistry.read;
     this.writeTools = this.toolRegistry.write;
+    this.scriptTools = this.toolRegistry.scripts;
     this.savePlanTools = this.toolRegistry.savePlan;
     this.readPlanTools = this.toolRegistry.readPlan;
   }
@@ -80,6 +87,15 @@ export class ToolRegistry {
    */
   public getWriteTools(excludedTools: string[] = []): ToolDefinition[] {
     return this.filterTools(this.writeTools, excludedTools);
+  }
+
+  /**
+   * Returns the registered script tools, excluding any requested tool names.
+   * @param {string[]} [excludedTools=[]] Tool names to omit from the result.
+   * @returns {ToolDefinition[]} The script tool definitions without their outer registry keys.
+   */
+  public getScriptTools(excludedTools: string[] = []): ToolDefinition[] {
+    return this.filterTools(this.scriptTools, excludedTools);
   }
 
   /**

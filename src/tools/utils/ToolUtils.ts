@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import promptSync from "prompt-sync";
 import type { FileSystemObject } from "../../global/Settings";
 
 export type RestrictedObjectLike = Pick<FileSystemObject, "path" | "type">;
@@ -100,4 +101,19 @@ export function isRestrictedPath(
       ),
     );
   });
+}
+
+/**
+ * Prompts the user to explicitly approve a risky tool action before it proceeds.
+ * @param {string} promptText Prompt shown to the user.
+ * @param {string} rejectionErrorMessage Error message thrown when the user declines.
+ * @returns {void} Does not return a value.
+ */
+export function getUserVerification(promptText: string, rejectionErrorMessage: string): void {
+  const prompt = promptSync({ sigint: true });
+  const response = prompt(promptText).trim().toLowerCase();
+
+  if (response !== "y" && response !== "yes") {
+    throw new Error(rejectionErrorMessage);
+  }
 }
