@@ -14,7 +14,17 @@ type ToolRegistryContents = {
   scripts: ToolCollection;
   savePlan: ToolCollection;
   readPlan: ToolCollection;
+  spawnAgent: ToolCollection;
 };
+
+const REQUIRED_TOOL_REGISTRY_SECTIONS = [
+  "read",
+  "write",
+  "scripts",
+  "savePlan",
+  "readPlan",
+  "spawnAgent",
+] as const;
 
 /**
  * Loads and exposes the tool metadata declared in ToolRegistry.json.
@@ -26,6 +36,7 @@ export class ToolRegistry {
   private readonly scriptTools: ToolCollection;
   private readonly savePlanTools: ToolCollection;
   private readonly readPlanTools: ToolCollection;
+  private readonly spawnAgentTools: ToolCollection;
 
   /**
    * Creates a tool registry from the provided ToolRegistry.json file.
@@ -35,40 +46,25 @@ export class ToolRegistry {
   public constructor(registryPath?: string) {
     const resolvedRegistryPath = registryPath ?? ToolRegistry.getDefaultRegistryPath();
     const registryContents = fs.readFileSync(resolvedRegistryPath, "utf-8");
-    const parsedRegistry = JSON.parse(registryContents) as Partial<ToolRegistryContents>;
-
-    if (
-      parsedRegistry.read === undefined ||
-      parsedRegistry.write === undefined ||
-      parsedRegistry.scripts === undefined ||
-      parsedRegistry.savePlan === undefined ||
-      parsedRegistry.readPlan === undefined ||
-      typeof parsedRegistry.read !== "object" ||
-      typeof parsedRegistry.write !== "object" ||
-      typeof parsedRegistry.scripts !== "object" ||
-      typeof parsedRegistry.savePlan !== "object" ||
-      typeof parsedRegistry.readPlan !== "object" ||
-      parsedRegistry.read === null ||
-      parsedRegistry.write === null ||
-      parsedRegistry.scripts === null ||
-      parsedRegistry.savePlan === null ||
-      parsedRegistry.readPlan === null
-    ) {
-      throw new Error(`Invalid tool registry file: ${resolvedRegistryPath}`);
-    }
+    const parsedRegistry = ToolRegistry.validateToolRegistryContents(
+      JSON.parse(registryContents),
+      resolvedRegistryPath,
+    );
 
     this.toolRegistry = {
-      read: parsedRegistry.read as ToolCollection,
-      write: parsedRegistry.write as ToolCollection,
-      scripts: parsedRegistry.scripts as ToolCollection,
-      savePlan: parsedRegistry.savePlan as ToolCollection,
-      readPlan: parsedRegistry.readPlan as ToolCollection,
+      read: parsedRegistry.read,
+      write: parsedRegistry.write,
+      scripts: parsedRegistry.scripts,
+      savePlan: parsedRegistry.savePlan,
+      readPlan: parsedRegistry.readPlan,
+      spawnAgent: parsedRegistry.spawnAgent,
     };
     this.readTools = this.toolRegistry.read;
     this.writeTools = this.toolRegistry.write;
     this.scriptTools = this.toolRegistry.scripts;
     this.savePlanTools = this.toolRegistry.savePlan;
     this.readPlanTools = this.toolRegistry.readPlan;
+    this.spawnAgentTools = this.toolRegistry.spawnAgent;
   }
 
   /**
@@ -117,6 +113,15 @@ export class ToolRegistry {
   }
 
   /**
+   * Returns the registered spawn-agent tools, excluding any requested tool names.
+   * @param {string[]} [excludedTools=[]] Tool names to omit from the result.
+   * @returns {ToolDefinition[]} The spawn-agent tool definitions without their outer registry keys.
+   */
+  public getSpawnAgent(excludedTools: string[] = []): ToolDefinition[] {
+    return this.filterTools(this.spawnAgentTools, excludedTools);
+  }
+
+  /**
    * Resolves the ToolRegistry.json path using the compiled location first and source as a fallback.
    * @returns {string} The absolute path to the tool registry JSON file.
    */
@@ -133,6 +138,55 @@ export class ToolRegistry {
     }
 
     throw new Error("ToolRegistry.json could not be found.");
+  }
+
+  /**
+   * Validates the parsed tool registry JSON and returns a typed registry object.
+   * @param {unknown} value Parsed JSON value to validate.
+   * @param {string} registryPath Registry path used in validation error messages.
+   * @returns {ToolRegistryContents} The validated tool registry contents.
+   * @throws {Error} Thrown when the tool registry is missing a required section or has an invalid section shape.
+   */
+  private static validateToolRegistryContents(
+    value: unknown,
+    registryPath: string,
+  ): ToolRegistryContents {
+    if (!ToolRegistry.isRecord(value)) {
+      throw new Error(`Invalid tool registry file: ${registryPath}`);
+    }
+
+    for (const sectionName of REQUIRED_TOOL_REGISTRY_SECTIONS) {
+      ToolRegistry.validateToolCollectionSection(value[sectionName], sectionName, registryPath);
+    }
+
+    return value as ToolRegistryContents;
+  }
+
+  /**
+   * Validates a single top-level tool collection section from the registry.
+   * @param {unknown} sectionValue Parsed section value to validate.
+   * @param {(typeof REQUIRED_TOOL_REGISTRY_SECTIONS)[number]} sectionName Top-level section name being checked.
+   * @param {string} registryPath Registry path used in validation error messages.
+   * @returns {void} Does not return a value.
+   * @throws {Error} Thrown when the section is missing or not an object.
+   */
+  private static validateToolCollectionSection(
+    sectionValue: unknown,
+    sectionName: (typeof REQUIRED_TOOL_REGISTRY_SECTIONS)[number],
+    registryPath: string,
+  ): void {
+    if (!ToolRegistry.isRecord(sectionValue)) {
+      throw new Error(`Invalid tool registry file: ${registryPath} (${sectionName})`);
+    }
+  }
+
+  /**
+   * Determines whether a parsed JSON value is a non-null object record.
+   * @param {unknown} value Parsed JSON value to inspect.
+   * @returns {value is Record<string, unknown>} `true` when the value is a non-null object record and not an array.
+   */
+  private static isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
   }
 
   /**

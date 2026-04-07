@@ -224,5 +224,31 @@
       ],
       "additionalProperties": false
     }
+  },
+  "spawnAgent": {
+    "spawnAgent": {
+      "type": "function",
+      "name": "spawnAgent",
+      "description": "Starts a named agent with the provided prompt. Returns the eventual agent response.",
+      "strict": true,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "agentName": {
+            "type": "string",
+            "description": "The agent variant to run."
+          },
+          "prompt": {
+            "type": "string",
+            "description": "The prompt text to send to the selected agent."
+          }
+        }
+      },
+      "required": [
+        "agentName",
+        "prompt"
+      ],
+      "additionalProperties": false
+    }
   }
 }

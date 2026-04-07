@@ -1,4 +1,7 @@
 import { ToolRegistry } from "../../../src/tools/registry/ToolRegistry";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 
 describe("ToolRegistry", () => {
   it("returns read tool definitions without their registry keys", () => {
@@ -258,5 +261,64 @@ describe("ToolRegistry", () => {
     const toolRegistry = new ToolRegistry();
 
     expect(toolRegistry.getReadPlanTools(["readPlan"])).toEqual([]);
+  });
+
+  it("returns spawn-agent tool definitions without excluded tools", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(toolRegistry.getSpawnAgent()).toEqual([
+      {
+        type: "function",
+        name: "spawnAgent",
+        description:
+          "Starts a named agent with the provided prompt. Returns the eventual agent response.",
+        strict: true,
+        parameters: {
+          type: "object",
+          properties: {
+            agentName: {
+              type: "string",
+              description: "The agent variant to run.",
+            },
+            prompt: {
+              type: "string",
+              description: "The prompt text to send to the selected agent.",
+            },
+          },
+        },
+        required: ["agentName", "prompt"],
+        additionalProperties: false,
+      },
+    ]);
+  });
+
+  it("returns an empty spawn-agent tool list when the spawn-agent tool is excluded", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(toolRegistry.getSpawnAgent(["spawnAgent"])).toEqual([]);
+  });
+
+  it("throws when a registry section is not an object", () => {
+    const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "tool-registry-"));
+    const registryPath = path.join(tempDirectory, "ToolRegistry.json");
+
+    fs.writeFileSync(
+      registryPath,
+      JSON.stringify({
+        read: [],
+        write: {},
+        scripts: {},
+        savePlan: {},
+        readPlan: {},
+        spawnAgent: {},
+      }),
+      "utf-8",
+    );
+
+    expect(() => new ToolRegistry(registryPath)).toThrow(
+      `Invalid tool registry file: ${registryPath} (read)`,
+    );
+
+    fs.rmSync(tempDirectory, { recursive: true, force: true });
   });
 });
