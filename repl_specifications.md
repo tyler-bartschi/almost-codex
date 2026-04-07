@@ -188,7 +188,7 @@ If a bare `<agent>` is ambiguous, command must fail and ask for `<mode>.<agent>`
 - `default_model` -> model enum
 - `git_mode|script_mode` -> `safe|unsafe`
 - agent personality/reasoning/model -> corresponding enum or `default`
-- agent permissions -> permission token string (`read|write|scripts|spawn_agent`)
+- agent permissions -> permission token string (`read|write|scripts|spawnAgent`)
 - `protected|concealed` -> path string or object-like string with optional type (`{"path":"...","type":"file|directory"}`)
 
 ### Flags

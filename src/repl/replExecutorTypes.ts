@@ -17,9 +17,9 @@ export type PermissionToken =
   | "read"
   | "write"
   | "scripts"
-  | "spawn_agent"
-  | "read_plan"
-  | "save_plan";
+  | "spawnAgent"
+  | "readPlan"
+  | "savePlan";
 
 /**
  * Raw per-agent settings shape as persisted in JSON profiles.

@@ -21,21 +21,21 @@
         "personality": "default",
         "reasoning": "default",
         "model": "default",
-        "permissions": ["read", "spawn_agent"]
+        "permissions": ["read", "spawnAgent"]
       },
       "planner": {
         "description": "Plans the necessary steps to fully accomplish the vision set out by the orchestrator",
         "personality": "default",
         "reasoning": "default",
         "model": "default",
-        "permissions": ["read", "save_plan"]
+        "permissions": ["read", "savePlan"]
       },
       "executor": {
         "description": "Executes the steps or goal provided by an orchestrator or planner, and writes code",
         "personality": "default",
         "reasoning": "default",
         "model": "default",
-        "permissions": ["read", "write", "scripts", "read_plan"]
+        "permissions": ["read", "write", "scripts", "readPlan"]
       }
     },
     "plan": {
@@ -44,7 +44,7 @@
         "personality": "default",
         "reasoning": "default",
         "model": "default",
-        "permissions": ["read", "spawn_agent"]
+        "permissions": ["read", "spawnAgent"]
       },
       "step_generator": {
         "description": "Generates steps to fulfill a given task",
@@ -83,7 +83,7 @@
         "personality": "default",
         "reasoning": "default",
         "model": "default",
-        "permissions": ["read", "spawn_agent"]
+        "permissions": ["read", "spawnAgent"]
       },
       "documenter": {
         "description": "Adds documentation to your codebase",

@@ -308,25 +308,25 @@ describe("Settings", () => {
     expect(chatSettings.model).toBe("gpt-4.1-mini");
   });
 
-  it("persists read_plan and save_plan agent permissions", () => {
+  it("persists readPlan and savePlan agent permissions", () => {
     const { configName } = newConfigFromUser();
     const settings = Settings.fromSettingsFile(configName);
 
-    settings.setAgentSetting("code", "planner", "permissions", "save_plan", "add");
-    settings.setAgentSetting("code", "executor", "permissions", "read_plan", "add");
+    settings.setAgentSetting("code", "planner", "permissions", "savePlan", "add");
+    settings.setAgentSetting("code", "executor", "permissions", "readPlan", "add");
 
     const persisted = JSON.parse(
       readUtf8(path.join(SETTINGS_DIR, `${configName}.config.json`)),
     ) as RawSettingsFixture;
 
-    expect(settings.agentSettings.code.planner.permissions).toContain("save_plan");
-    expect(settings.agentSettings.code.executor.permissions).toContain("read_plan");
+    expect(settings.agentSettings.code.planner.permissions).toContain("savePlan");
+    expect(settings.agentSettings.code.executor.permissions).toContain("readPlan");
     expect(
       (persisted.agents.code as Record<string, { permissions: string[] }>).planner.permissions,
-    ).toContain("save_plan");
+    ).toContain("savePlan");
     expect(
       (persisted.agents.code as Record<string, { permissions: string[] }>).executor.permissions,
-    ).toContain("read_plan");
+    ).toContain("readPlan");
   });
 
   it("loads existing config on configName change, saves when target config does not exist, and no-ops for same name", () => {
