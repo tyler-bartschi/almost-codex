@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import dotenv from "dotenv";
 import * as readline from "readline";
 import { initializeGlobalPromptStore } from "./global/PromptStore";
+import { initializeGlobalToolRegistry } from "./global/ToolRegistryStore";
 import {
   getGlobalReplCurrentMode,
   getGlobalReplShouldClear,
@@ -203,6 +204,7 @@ export async function main(): Promise<void> {
     return;
   }
   initializeGlobalPromptStore(process.cwd());
+  initializeGlobalToolRegistry();
 
   while (true) {
     // note to agents: this console.log is intentional to provide a new line before every prompt. do not remove
