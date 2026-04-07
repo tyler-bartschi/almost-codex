@@ -298,6 +298,24 @@ describe("ToolRegistry", () => {
     expect(toolRegistry.getSpawnAgent(["spawnAgent"])).toEqual([]);
   });
 
+  it("returns true when a tool exists in a requested category", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(toolRegistry.verifyTool(["read"], "readContext")).toBe(true);
+  });
+
+  it("returns true when a tool exists in any requested category", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(toolRegistry.verifyTool(["read", "script"], "RunTerminal")).toBe(true);
+  });
+
+  it("returns false when a tool does not exist in the requested categories", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(toolRegistry.verifyTool(["read", "savePlan"], "spawnAgent")).toBe(false);
+  });
+
   it("throws when a registry section is not an object", () => {
     const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "tool-registry-"));
     const registryPath = path.join(tempDirectory, "ToolRegistry.json");

@@ -7,6 +7,7 @@ export type ToolDefinition = Record<string, unknown> & {
 };
 
 type ToolCollection = Record<string, ToolDefinition>;
+type ToolCategory = "read" | "write" | "script" | "savePlan" | "readPlan" | "spawnAgent";
 
 type ToolRegistryContents = {
   read: ToolCollection;
@@ -122,6 +123,18 @@ export class ToolRegistry {
   }
 
   /**
+   * Verifies whether a tool name exists in any of the requested tool categories.
+   * @param {ToolCategory[]} categories Tool categories to search.
+   * @param {string} toolName Tool name to verify.
+   * @returns {boolean} `true` when the tool exists in at least one requested category; otherwise `false`.
+   */
+  public verifyTool(categories: ToolCategory[], toolName: string): boolean {
+    const toolCollections = categories.map((category) => this.getToolCollectionForCategory(category));
+
+    return toolCollections.some((tools) => toolName in tools);
+  }
+
+  /**
    * Resolves the ToolRegistry.json path using the compiled location first and source as a fallback.
    * @returns {string} The absolute path to the tool registry JSON file.
    */
@@ -187,6 +200,28 @@ export class ToolRegistry {
    */
   private static isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+
+  /**
+   * Resolves a public tool category name to its internal tool collection.
+   * @param {ToolCategory} category Tool category to resolve.
+   * @returns {ToolCollection} The matching tool collection.
+   */
+  private getToolCollectionForCategory(category: ToolCategory): ToolCollection {
+    switch (category) {
+      case "read":
+        return this.readTools;
+      case "write":
+        return this.writeTools;
+      case "script":
+        return this.scriptTools;
+      case "savePlan":
+        return this.savePlanTools;
+      case "readPlan":
+        return this.readPlanTools;
+      case "spawnAgent":
+        return this.spawnAgentTools;
+    }
   }
 
   /**
