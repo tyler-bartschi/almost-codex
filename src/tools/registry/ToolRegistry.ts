@@ -6,8 +6,18 @@ export type ToolDefinition = Record<string, unknown> & {
   name: string;
 };
 
+type ToolParameterProperty = {
+  type?: string;
+  description?: string;
+};
+
+type ToolParametersDefinition = {
+  type: string;
+  properties?: Record<string, ToolParameterProperty>;
+};
+
 type ToolCollection = Record<string, ToolDefinition>;
-type ToolCategory = "read" | "write" | "script" | "savePlan" | "readPlan" | "spawnAgent";
+type ToolCategory = "read" | "write" | "scripts" | "savePlan" | "readPlan" | "spawnAgent";
 
 type ToolRegistryContents = {
   read: ToolCollection;
@@ -135,6 +145,27 @@ export class ToolRegistry {
   }
 
   /**
+   * Returns a registered tool definition from any of the requested categories.
+   * @param {ToolCategory[]} categories Tool categories to search.
+   * @param {string} toolName Tool name to resolve.
+   * @returns {ToolDefinition | undefined} The matching tool definition, or `undefined` when none is found.
+   */
+  public getToolDefinition(
+    categories: ToolCategory[],
+    toolName: string,
+  ): ToolDefinition | undefined {
+    for (const category of categories) {
+      const toolDefinition = this.getToolCollectionForCategory(category)[toolName];
+
+      if (toolDefinition !== undefined) {
+        return { ...toolDefinition };
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
    * Resolves the ToolRegistry.json path using the compiled location first and source as a fallback.
    * @returns {string} The absolute path to the tool registry JSON file.
    */
@@ -213,7 +244,7 @@ export class ToolRegistry {
         return this.readTools;
       case "write":
         return this.writeTools;
-      case "script":
+      case "scripts":
         return this.scriptTools;
       case "savePlan":
         return this.savePlanTools;
@@ -238,3 +269,5 @@ export class ToolRegistry {
       .map((tool) => ({ ...tool }));
   }
 }
+
+export type { ToolCategory, ToolParameterProperty, ToolParametersDefinition };

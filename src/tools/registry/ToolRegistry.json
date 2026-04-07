@@ -158,9 +158,9 @@
     }
   },
   "scripts": {
-    "RunTerminal": {
+    "runTerminal": {
       "type": "function",
-      "name": "RunTerminal",
+      "name": "runTerminal",
       "description": "Runs a UNIX-based terminal command from the accessible project root after explicit user confirmation. Returns the terminal output as a string.",
       "strict": true,
       "parameters": {

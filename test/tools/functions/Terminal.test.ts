@@ -6,7 +6,7 @@ import promptSync from "prompt-sync";
 import type { Settings } from "../../../src/global/Settings";
 import { clearGlobalReplState, setGlobalReplState } from "../../../src/global/ReplStateStore";
 import type { ReplState } from "../../../src/repl/ReplExecutorTypes";
-import { RunTerminal } from "../../../src/tools/functions/Terminal";
+import { runTerminal } from "../../../src/tools/functions/Terminal";
 
 jest.mock("prompt-sync", () => jest.fn());
 jest.mock("child_process", () => ({
@@ -79,7 +79,7 @@ describe("Terminal tools", () => {
     mockedPromptSync.mockReturnValue(promptMock);
     mockedExecSync.mockReturnValue("ok\n" as never);
 
-    const output = RunTerminal("printf 'ok\\n'");
+    const output = runTerminal("printf 'ok\\n'");
 
     expect(output).toBe("ok\n");
     expect(promptMock).toHaveBeenCalledWith(
@@ -96,7 +96,7 @@ describe("Terminal tools", () => {
   it("throws when the user declines to run the command", () => {
     mockedPromptSync.mockReturnValue(createPromptMock("no"));
 
-    expect(() => RunTerminal("pwd")).toThrow("Terminal command cancelled by user: pwd");
+    expect(() => runTerminal("pwd")).toThrow("Terminal command cancelled by user: pwd");
     expect(mockedExecSync).not.toHaveBeenCalled();
   });
 
@@ -112,7 +112,7 @@ describe("Terminal tools", () => {
       throw commandError;
     });
 
-    expect(() => RunTerminal("rm protected-file")).toThrow(
+    expect(() => runTerminal("rm protected-file")).toThrow(
       "partial output\npermission denied",
     );
   });
@@ -126,7 +126,7 @@ describe("Terminal tools", () => {
       },
     );
 
-    const output = RunTerminal("pwd");
+    const output = runTerminal("pwd");
 
     expect(output).toBe(`pwd @ ${tempRoot}`);
     expect(mockedExecSync).toHaveBeenCalledWith("pwd", {

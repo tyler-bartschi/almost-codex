@@ -7,7 +7,7 @@ import { getUserVerification } from "../utils/ToolUtils";
  * @param {string} command UNIX-based terminal command to execute.
  * @returns {string} The combined command output captured from stdout and stderr.
  */
-export function RunTerminal(command: string): string {
+export function runTerminal(command: string): string {
   const rootDir = getGlobalReplRootDir();
 
   getUserVerification(

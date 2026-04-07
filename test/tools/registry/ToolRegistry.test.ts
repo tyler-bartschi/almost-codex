@@ -198,7 +198,7 @@ describe("ToolRegistry", () => {
   it("returns an empty script tool list when the only script tool is excluded", () => {
     const toolRegistry = new ToolRegistry();
 
-    expect(toolRegistry.getScriptTools(["RunTerminal"])).toEqual([]);
+    expect(toolRegistry.getScriptTools(["runTerminal"])).toEqual([]);
   });
 
   it("returns script tool definitions without excluded tools", () => {
@@ -207,7 +207,7 @@ describe("ToolRegistry", () => {
     expect(toolRegistry.getScriptTools()).toEqual([
       {
         type: "function",
-        name: "RunTerminal",
+        name: "runTerminal",
         description:
           "Runs a UNIX-based terminal command from the accessible project root after explicit user confirmation. Returns the terminal output as a string.",
         strict: true,
@@ -307,7 +307,7 @@ describe("ToolRegistry", () => {
   it("returns true when a tool exists in any requested category", () => {
     const toolRegistry = new ToolRegistry();
 
-    expect(toolRegistry.verifyTool(["read", "script"], "RunTerminal")).toBe(true);
+    expect(toolRegistry.verifyTool(["read", "scripts"], "runTerminal")).toBe(true);
   });
 
   it("returns false when a tool does not exist in the requested categories", () => {
