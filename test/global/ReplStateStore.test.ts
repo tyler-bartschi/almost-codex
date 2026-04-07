@@ -3,6 +3,7 @@ import type { Settings } from "../../src/global/Settings";
 import {
   clearGlobalReplState,
   getGlobalReplConcealedObjects,
+  getGlobalReplCurrentAgent,
   getGlobalReplCurrentMode,
   getGlobalReplProtectedObjects,
   getGlobalReplRootDir,
@@ -14,7 +15,7 @@ import {
   requireGlobalReplState,
   setGlobalReplState,
 } from "../../src/global/ReplStateStore";
-import type { ReplState } from "../../src/repl/replExecutorTypes";
+import type { ReplState } from "../../src/repl/ReplExecutorTypes";
 
 /**
  * Builds a REPL state fixture for store tests.
@@ -24,6 +25,7 @@ import type { ReplState } from "../../src/repl/replExecutorTypes";
 function createReplStateFixture(overrides: Partial<ReplState> = {}): ReplState {
   return {
     currentMode: "code",
+    currentAgent: "code.orchestrator",
     rootDir: "/tmp/project",
     settings: {} as Settings,
     shouldExit: false,
@@ -71,6 +73,12 @@ describe("ReplStateStore", () => {
     setGlobalReplState(createReplStateFixture({ currentMode: "document" }));
 
     expect(getGlobalReplCurrentMode()).toBe("document");
+  });
+
+  it("returns the current agent from the stored repl state", () => {
+    setGlobalReplState(createReplStateFixture({ currentAgent: "code.executor" }));
+
+    expect(getGlobalReplCurrentAgent()).toBe("code.executor");
   });
 
   it("returns the root directory from the stored repl state", () => {

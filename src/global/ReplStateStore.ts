@@ -43,6 +43,15 @@ export function getGlobalReplCurrentMode(): ReplState["currentMode"] {
 }
 
 /**
+ * Returns the current agent identifier from the active global REPL state.
+ * @returns {ReplState["currentAgent"]} The active REPL agent identifier.
+ * @throws {Error} Thrown when no global REPL state has been stored.
+ */
+export function getGlobalReplCurrentAgent(): ReplState["currentAgent"] {
+  return requireGlobalReplState().currentAgent;
+}
+
+/**
  * Returns the root directory from the active global REPL state.
  * @returns {ReplState["rootDir"]} The active REPL root directory.
  * @throws {Error} Thrown when no global REPL state has been stored.

@@ -3,7 +3,7 @@ import * as os from "os";
 import * as path from "path";
 import type { Settings } from "../../../src/global/Settings";
 import { clearGlobalReplState, setGlobalReplState } from "../../../src/global/ReplStateStore";
-import type { ReplState } from "../../../src/repl/replExecutorTypes";
+import type { ReplState } from "../../../src/repl/ReplExecutorTypes";
 import { readPlan, savePlan } from "../../../src/tools/functions/Planning";
 
 jest.mock("fs", () => {
@@ -38,6 +38,7 @@ function setPlanningReplState(rootDir: string): void {
   } as Pick<Settings, "concealedObjects" | "protectedObjects">;
   const replState: ReplState = {
     currentMode: "code",
+    currentAgent: "code.orchestrator",
     rootDir,
     settings: settings as Settings,
     shouldExit: false,

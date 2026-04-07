@@ -7,7 +7,7 @@ import {
   clearGlobalReplState,
   setGlobalReplState,
 } from "../../../src/global/ReplStateStore";
-import type { ReplState } from "../../../src/repl/replExecutorTypes";
+import type { ReplState } from "../../../src/repl/ReplExecutorTypes";
 import {
   findLocation,
   listDirectoryTree,
@@ -41,6 +41,7 @@ function setReadingReplState(
   };
   const replState: ReplState = {
     currentMode: "code",
+    currentAgent: "code.orchestrator",
     rootDir,
     settings: settings as Settings,
     shouldExit: false,

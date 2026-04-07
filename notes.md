@@ -3,6 +3,7 @@
 - do I want spawned agents to get a history? Do they need to know outside context, or should they just ask for it? Maybe have a compressedHistory parameter
   that the calling agent could write if necessary. that way it can get some context?
 - ToolExecutor needs to take the following arguments: the agent name (to verify permissions), the tool to run and the tool arguments. Does it need anything else?
+- SpawnAgent should keep track of its agent name as well, global state will keep track of the main agent name
 - what other tools are needed? bash scripts basically. Already has the listing and finding commands as part of the read tools, so maybe that's enough? do i worry about the
   context window? nah probably not.
 - bash script tools should always be human-in-the-loop, but the agent can provide the bash script it wants run

@@ -5,7 +5,7 @@ import promptSync from "prompt-sync";
 import type { Settings } from "../../../src/global/Settings";
 import { FileSystemObject } from "../../../src/global/Settings";
 import { clearGlobalReplState, setGlobalReplState } from "../../../src/global/ReplStateStore";
-import type { ReplState } from "../../../src/repl/replExecutorTypes";
+import type { ReplState } from "../../../src/repl/ReplExecutorTypes";
 import {
   appendToFile,
   createDirectory,
@@ -57,6 +57,7 @@ function setWritingReplState(
   } as Settings;
   const replState: ReplState = {
     currentMode: "code",
+    currentAgent: "code.orchestrator",
     rootDir,
     settings,
     shouldExit: false,

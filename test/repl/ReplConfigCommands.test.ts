@@ -6,8 +6,8 @@ import {
 } from "../../src/global/ReplStateStore";
 import { Settings } from "../../src/global/Settings";
 import { ReplConfigCommands } from "../../src/repl/replConfigCommands";
-import { ReplExecutorSupport } from "../../src/repl/replExecutorSupport";
-import { ReplParser } from "../../src/repl/replParser";
+import { ReplExecutorSupport } from "../../src/repl/ReplExecutorSupport";
+import { ReplParser } from "../../src/repl/ReplParser";
 
 const SETTINGS_DIR = path.resolve(process.cwd(), "src", "settings");
 const USER_CONFIG_PATH = path.join(SETTINGS_DIR, "user_default.config.json");
@@ -28,6 +28,7 @@ describe("ReplConfigCommands", () => {
     fs.writeFileSync(USER_CONFIG_PATH, initialUserRaw, "utf-8");
     setGlobalReplState({
       currentMode: "code",
+      currentAgent: "code.orchestrator",
       rootDir: process.cwd(),
       settings: Settings.fromUserDefault(),
       shouldExit: false,

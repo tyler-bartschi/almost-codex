@@ -19,7 +19,7 @@ import {
   clearGlobalReplState,
   setGlobalReplState,
 } from "../../src/global/ReplStateStore";
-import type { ReplState } from "../../src/repl/replExecutorTypes";
+import type { ReplState } from "../../src/repl/ReplExecutorTypes";
 
 /**
  * Builds a REPL state fixture with initialized settings for prompt store tests.
@@ -29,6 +29,7 @@ import type { ReplState } from "../../src/repl/replExecutorTypes";
 function createReplStateFixture(overrides: Partial<ReplState> = {}): ReplState {
   return {
     currentMode: "code",
+    currentAgent: "code.orchestrator",
     rootDir: process.cwd(),
     settings: createSettingsFixture(),
     shouldExit: false,

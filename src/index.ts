@@ -46,6 +46,7 @@ function createInitialState(rootDir: string): ReplState {
   const currentMode: AgentMode = "code";
   return {
     currentMode,
+    currentAgent: "code.orchestrator",
     rootDir,
     settings,
     shouldExit: false,

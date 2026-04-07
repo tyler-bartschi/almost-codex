@@ -5,7 +5,7 @@ import { execSync } from "child_process";
 import promptSync from "prompt-sync";
 import type { Settings } from "../../../src/global/Settings";
 import { clearGlobalReplState, setGlobalReplState } from "../../../src/global/ReplStateStore";
-import type { ReplState } from "../../../src/repl/replExecutorTypes";
+import type { ReplState } from "../../../src/repl/ReplExecutorTypes";
 import { RunTerminal } from "../../../src/tools/functions/Terminal";
 
 jest.mock("prompt-sync", () => jest.fn());
@@ -49,6 +49,7 @@ function setTerminalReplState(rootDir: string): void {
   } as Pick<Settings, "concealedObjects" | "protectedObjects">;
   const replState: ReplState = {
     currentMode: "code",
+    currentAgent: "code.orchestrator",
     rootDir,
     settings: settings as Settings,
     shouldExit: false,
