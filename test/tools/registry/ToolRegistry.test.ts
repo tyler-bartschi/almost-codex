@@ -271,18 +271,18 @@ describe("ToolRegistry", () => {
         type: "function",
         name: "spawnAgent",
         description:
-          "Starts a named agent with the provided prompt. Returns the eventual agent response.",
+          "Starts an agent in the current mode using the provided short agent name and prompt. Returns the eventual agent response.",
         strict: true,
         parameters: {
           type: "object",
           properties: {
             agentName: {
               type: "string",
-              description: "The agent variant to run.",
+              description: "The short agent name to run in the current mode, without the mode prefix. Examples: 'planner', 'executor'",
             },
             prompt: {
               type: "string",
-              description: "The prompt text to send to the selected agent.",
+              description: "The prompt text to send to the spawned agent.",
             },
           },
         },

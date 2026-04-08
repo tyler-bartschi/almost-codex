@@ -13,6 +13,7 @@ ToolExecutor
 Main Loop and Experimentation
 - Implement the main loop in index.ts to actually start up the agent and switch between modes
 - Set up a docker container so that I can experiment with this thing without messing anything up
+- Add logging to all function calls to track when they're actually being called.
 
 Far Future
 - script-safe mode is going to be a future thing. Potentially enables turning off the human-in-the-loop, but for now changing script mode will not change anything
