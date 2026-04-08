@@ -327,3 +327,32 @@ export function getPlanSynthesizerPrompt(): SystemPromptMessage[] {
 export function getTestTesterPrompt(): SystemPromptMessage[] {
   return buildAgentPromptPair("test", "tester", "test", "tester");
 }
+
+/**
+ * Returns the system prompt pair for a specific agent full name.
+ * @param {string} agentFullName The full agent name in `<mode>.<agent>` format.
+ * @returns {SystemPromptMessage[]} The personality prompt and task prompt for the agent.
+ * @throws {Error} Thrown when the agent full name does not map to a known prompt getter.
+ */
+export function getPrompt(agentFullName: string): SystemPromptMessage[] {
+  const promptGetters: Record<string, () => SystemPromptMessage[]> = {
+    "ask.chat": getAskChatPrompt,
+    "code.executor": getCodeExecutorPrompt,
+    "code.orchestrator": getCodeOrchestratorPrompt,
+    "code.planner": getCodePlannerPrompt,
+    "document.chat": getDocumentChatPrompt,
+    "document.documenter": getDocumentDocumenterPrompt,
+    "plan.chat": getPlanChatPrompt,
+    "plan.expander": getPlanExpanderPrompt,
+    "plan.step_generator": getPlanStepGeneratorPrompt,
+    "plan.synthesizer": getPlanSynthesizerPrompt,
+    "test.tester": getTestTesterPrompt,
+  };
+  const getPromptPair = promptGetters[agentFullName];
+
+  if (getPromptPair === undefined) {
+    throw new Error(`Prompt getter for agent "${agentFullName}" was not found.`);
+  }
+
+  return getPromptPair();
+}

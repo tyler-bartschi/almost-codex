@@ -5,6 +5,7 @@ import {
   getCodePlannerPrompt,
   getDocumentChatPrompt,
   getDocumentDocumenterPrompt,
+  getPrompt,
   getPlanChatPrompt,
   getPlanExpanderPrompt,
   getPlanStepGeneratorPrompt,
@@ -172,5 +173,33 @@ describe("PromptStore", () => {
       role: "system",
       content: expect.stringContaining("You are a sarcastic assistant."),
     });
+  });
+
+  it.each([
+    ["ask.chat", getAskChatPrompt],
+    ["code.executor", getCodeExecutorPrompt],
+    ["code.orchestrator", getCodeOrchestratorPrompt],
+    ["code.planner", getCodePlannerPrompt],
+    ["document.chat", getDocumentChatPrompt],
+    ["document.documenter", getDocumentDocumenterPrompt],
+    ["plan.chat", getPlanChatPrompt],
+    ["plan.expander", getPlanExpanderPrompt],
+    ["plan.step_generator", getPlanStepGeneratorPrompt],
+    ["plan.synthesizer", getPlanSynthesizerPrompt],
+    ["test.tester", getTestTesterPrompt],
+  ])("returns the same prompt pair as the existing getter for %s", (agentFullName, getter) => {
+    initializeGlobalPromptStore(process.cwd());
+    setGlobalReplState(createReplStateFixture());
+
+    expect(getPrompt(agentFullName)).toEqual(getter());
+  });
+
+  it("throws when the agent full name does not map to a prompt getter", () => {
+    initializeGlobalPromptStore(process.cwd());
+    setGlobalReplState(createReplStateFixture());
+
+    expect(() => getPrompt("code.unknown")).toThrow(
+      'Prompt getter for agent "code.unknown" was not found.',
+    );
   });
 });
