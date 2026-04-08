@@ -298,6 +298,26 @@ describe("ToolRegistry", () => {
     expect(toolRegistry.getSpawnAgent(["spawnAgent"])).toEqual([]);
   });
 
+  it("returns the flattened tool definitions for the requested categories", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(toolRegistry.getToolsForCategories(["read", "spawnAgent"])).toEqual([
+      ...toolRegistry.getReadTools(),
+      ...toolRegistry.getSpawnAgent(),
+    ]);
+  });
+
+  it("excludes requested tool names from flattened category results", () => {
+    const toolRegistry = new ToolRegistry();
+
+    expect(
+      toolRegistry.getToolsForCategories(["read", "spawnAgent"], ["readContext", "spawnAgent"]),
+    ).toEqual([
+      ...toolRegistry.getReadTools(["readContext"]),
+      ...toolRegistry.getSpawnAgent(["spawnAgent"]),
+    ]);
+  });
+
   it("returns true when a tool exists in a requested category", () => {
     const toolRegistry = new ToolRegistry();
 

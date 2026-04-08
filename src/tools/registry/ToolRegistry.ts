@@ -133,6 +133,25 @@ export class ToolRegistry {
   }
 
   /**
+   * Returns all tool definitions available across the requested categories.
+   * @param {ToolCategory[]} categories Tool categories to include.
+   * @param {string[]} [excludedTools=[]] Tool names to omit from the result.
+   * @returns {ToolDefinition[]} Flattened tool definitions from all requested categories.
+   */
+  public getToolsForCategories(
+    categories: ToolCategory[],
+    excludedTools: string[] = [],
+  ): ToolDefinition[] {
+    const tools: ToolDefinition[] = [];
+
+    for (const category of categories) {
+      tools.push(...this.filterTools(this.getToolCollectionForCategory(category), excludedTools));
+    }
+
+    return tools;
+  }
+
+  /**
    * Verifies whether a tool name exists in any of the requested tool categories.
    * @param {ToolCategory[]} categories Tool categories to search.
    * @param {string} toolName Tool name to verify.
