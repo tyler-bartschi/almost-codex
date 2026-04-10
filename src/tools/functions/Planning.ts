@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { getGlobalReplRootDir } from "../../global/ReplStateStore";
+import { createLogPreview, logToolCall, logToolReturn } from "../utils/ToolUtils";
 
 /**
  * Formats a date as a local ISO-like timestamp without a timezone offset.
@@ -26,6 +27,10 @@ function formatLocalIsoTimestamp(date: Date): string {
  * @returns {string} The generated planning file name once it has been written.
  */
 export function savePlan(name: string, content: string): string {
+  logToolCall("savePlan", {
+    name,
+    content: createLogPreview(content),
+  });
   const rootDir = getGlobalReplRootDir();
   const plansDirectoryPath = path.join(rootDir, "agent-plans");
   const timestamp = formatLocalIsoTimestamp(new Date());
@@ -35,6 +40,7 @@ export function savePlan(name: string, content: string): string {
   try {
     fs.mkdirSync(plansDirectoryPath, { recursive: true });
     fs.writeFileSync(planningFilePath, content, { encoding: "utf-8", flag: "wx" });
+    logToolReturn("savePlan");
     return planningFileName;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "EEXIST") {
@@ -54,6 +60,7 @@ export function savePlan(name: string, content: string): string {
  * @returns {string} The contents of the planning file.
  */
 export function readPlan(filename: string): string {
+  logToolCall("readPlan", { filename });
   const rootDir = getGlobalReplRootDir();
   const plansDirectoryPath = path.join(rootDir, "agent-plans");
   const planningFilePath = path.join(plansDirectoryPath, filename);
@@ -62,5 +69,7 @@ export function readPlan(filename: string): string {
     throw new Error("The plan does not exist");
   }
 
-  return fs.readFileSync(planningFilePath, "utf-8");
+  const planContents = fs.readFileSync(planningFilePath, "utf-8");
+  logToolReturn("readPlan");
+  return planContents;
 }

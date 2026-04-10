@@ -5,7 +5,12 @@ import {
   getGlobalReplRootDir,
 } from "../../global/ReplStateStore";
 import type { RestrictedObjectLike } from "../utils/ToolUtils";
-import { isRestrictedPath, resolvePathWithinRoot } from "../utils/ToolUtils";
+import {
+  isRestrictedPath,
+  logToolCall,
+  logToolReturn,
+  resolvePathWithinRoot,
+} from "../utils/ToolUtils";
 
 /**
  * Returns the root directory and concealed objects from the active REPL state.
@@ -50,6 +55,7 @@ export function readDirectory(directoryPath: string): string {
  * @returns {string} A formatted tree representation rooted at `rootDir`.
  */
 export function listDirectoryTree(): string {
+  logToolCall("listDirectoryTree", {});
   const [rootDir, concealedObjects] = getReadingContext();
   const resolvedRootDir = resolvePathWithinRoot(".", rootDir);
   const treeLines = [`${path.basename(resolvedRootDir) || resolvedRootDir}/`];
@@ -89,6 +95,7 @@ export function listDirectoryTree(): string {
 
   walk(resolvedRootDir, "");
 
+  logToolReturn("listDirectoryTree");
   return treeLines.join("\n");
 }
 
@@ -98,6 +105,7 @@ export function listDirectoryTree(): string {
  * @returns {string} The file contents or concatenated directory contents.
  */
 export function readContext(targetPath: string): string {
+  logToolCall("readContext", { targetPath });
   const [rootDir, concealedObjects] = getReadingContext();
   const resolvedTargetPath = resolvePathWithinRoot(targetPath, rootDir);
 
@@ -107,10 +115,14 @@ export function readContext(targetPath: string): string {
 
   const targetStats = fs.statSync(resolvedTargetPath);
   if (targetStats.isDirectory()) {
-    return readDirectory(resolvedTargetPath);
+    const directoryContents = readDirectory(resolvedTargetPath);
+    logToolReturn("readContext");
+    return directoryContents;
   }
 
-  return readFile(resolvedTargetPath);
+  const fileContents = readFile(resolvedTargetPath);
+  logToolReturn("readContext");
+  return fileContents;
 }
 
 /**
@@ -119,6 +131,7 @@ export function readContext(targetPath: string): string {
  * @returns {string[]} Relative paths from the root directory for every matching filesystem object.
  */
 export function findLocation(name: string): string[] {
+  logToolCall("findLocation", { name });
   const [rootDir, concealedObjects] = getReadingContext();
   const resolvedRootDir = resolvePathWithinRoot(".", rootDir);
 
@@ -154,5 +167,9 @@ export function findLocation(name: string): string[] {
     throw new Error(`Requested file or directory cannot be found: ${name}`);
   }
 
-  return matches.sort((leftPath, rightPath) => leftPath.localeCompare(rightPath));
+  const sortedMatches = matches.sort((leftPath, rightPath) =>
+    leftPath.localeCompare(rightPath)
+  );
+  logToolReturn("findLocation");
+  return sortedMatches;
 }

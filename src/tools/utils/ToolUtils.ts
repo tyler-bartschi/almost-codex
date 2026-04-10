@@ -4,6 +4,7 @@ import promptSync from "prompt-sync";
 import type { FileSystemObject } from "../../global/Settings";
 
 export type RestrictedObjectLike = Pick<FileSystemObject, "path" | "type">;
+const DEFAULT_LOG_PREVIEW_LINE_COUNT = 4;
 
 /**
  * Returns normalized path variants used when comparing restricted entries.
@@ -116,4 +117,39 @@ export function getUserVerification(promptText: string, rejectionErrorMessage: s
   if (response !== "y" && response !== "yes") {
     throw new Error(rejectionErrorMessage);
   }
+}
+
+/**
+ * Returns a short preview of multiline text for logging.
+ * @param {string} text Full text content being logged.
+ * @param {number} [lineCount=DEFAULT_LOG_PREVIEW_LINE_COUNT] Number of lines to include in the preview.
+ * @returns {string} The first requested lines, plus an omission marker when truncated.
+ */
+export function createLogPreview(
+  text: string,
+  lineCount: number = DEFAULT_LOG_PREVIEW_LINE_COUNT,
+): string {
+  const lines = text.split("\n");
+  const preview = lines.slice(0, lineCount).join("\n");
+
+  return lines.length > lineCount ? `${preview}\n...` : preview;
+}
+
+/**
+ * Logs a callable tool invocation with its name and parameters.
+ * @param {string} toolName Registered tool name being executed.
+ * @param {Record<string, unknown>} parameters Parameters received by the tool.
+ * @returns {void} No return value.
+ */
+export function logToolCall(toolName: string, parameters: Record<string, unknown>): void {
+  console.log(`[Tool:${toolName}] called with parameters:`, parameters);
+}
+
+/**
+ * Logs that a callable tool is about to return.
+ * @param {string} toolName Registered tool name being executed.
+ * @returns {void} No return value.
+ */
+export function logToolReturn(toolName: string): void {
+  console.log(`[Tool:${toolName}] about to return`);
 }

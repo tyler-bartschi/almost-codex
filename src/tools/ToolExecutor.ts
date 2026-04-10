@@ -306,6 +306,12 @@ export async function runTool(
     const result = await toolImplementation(argumentsObject);
     return serializeToolResult(result);
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log(
+      `[ToolExecutor] Caught error while running "${toolName}":`,
+      error,
+      `message: ${errorMessage}`,
+    );
     return error instanceof Error ? error.message : String(error);
   }
 }

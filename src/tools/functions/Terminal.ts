@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 import { getGlobalReplRootDir } from "../../global/ReplStateStore";
-import { getUserVerification } from "../utils/ToolUtils";
+import { getUserVerification, logToolCall, logToolReturn } from "../utils/ToolUtils";
 
 /**
  * Executes a shell command from the REPL root directory after explicit user approval.
@@ -8,6 +8,7 @@ import { getUserVerification } from "../utils/ToolUtils";
  * @returns {string} The combined command output captured from stdout and stderr.
  */
 export function runTerminal(command: string): string {
+  logToolCall("runTerminal", { command });
   const rootDir = getGlobalReplRootDir();
 
   getUserVerification(
@@ -16,12 +17,14 @@ export function runTerminal(command: string): string {
   );
 
   try {
-    return execSync(command, {
+    const output = execSync(command, {
       cwd: rootDir,
       encoding: "utf-8",
       shell: "/bin/sh",
       stdio: "pipe",
     });
+    logToolReturn("runTerminal");
+    return output;
   } catch (error) {
     const execError = error as NodeJS.ErrnoException & {
       stdout?: string | Buffer;

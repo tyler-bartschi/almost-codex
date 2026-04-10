@@ -17,6 +17,7 @@ import { getGlobalToolRegistry } from "../../global/ToolRegistryStore";
 import type { AgentMode, OpenAIModel, OpenAIReasoningMode } from "../../global/Settings";
 import type { ToolCategory } from "../registry/ToolRegistry";
 import { runTool } from "../ToolExecutor";
+import { createLogPreview, logToolCall, logToolReturn } from "../utils/ToolUtils";
 
 export interface AgentExampleParams {
   client: OpenAI;
@@ -225,6 +226,10 @@ export async function spawnAgent(
   prompt: string,
   client?: OpenAI,
 ): Promise<string> {
+  logToolCall("spawnAgent", {
+    agentName,
+    prompt: createLogPreview(prompt),
+  });
   const currentMode = getGlobalReplCurrentMode();
   const availableAgentNames = getAvailableAgentNames(currentMode);
 
@@ -253,7 +258,7 @@ export async function spawnAgent(
   const reasoning = resolveAgentReasoning(agentSettings.reasoning);
   const openAIClient = client ?? new OpenAI();
 
-  return _spawnAgent({
+  const response = await _spawnAgent({
     fullAgentName,
     client: openAIClient,
     model,
@@ -261,4 +266,6 @@ export async function spawnAgent(
     history,
     tools,
   });
+  logToolReturn("spawnAgent");
+  return response;
 }

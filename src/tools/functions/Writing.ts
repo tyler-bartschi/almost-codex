@@ -6,8 +6,11 @@ import {
   getGlobalReplRootDir,
 } from "../../global/ReplStateStore";
 import {
+  createLogPreview,
   getUserVerification,
   isRestrictedPath,
+  logToolCall,
+  logToolReturn,
   resolvePathWithinRoot,
 } from "../utils/ToolUtils";
 
@@ -36,6 +39,7 @@ function assertWritableTarget(targetPath: string): void {
  * @returns {string} The absolute created directory path.
  */
 export function createDirectory(directoryPath: string): string {
+  logToolCall("createDirectory", { directoryPath });
   const rootDir = getGlobalReplRootDir();
   const resolvedDirectoryPath = resolvePathWithinRoot(
     directoryPath,
@@ -44,6 +48,7 @@ export function createDirectory(directoryPath: string): string {
   );
   assertWritableTarget(resolvedDirectoryPath);
   fs.mkdirSync(resolvedDirectoryPath, { recursive: true });
+  logToolReturn("createDirectory");
   return resolvedDirectoryPath;
 }
 
@@ -54,11 +59,16 @@ export function createDirectory(directoryPath: string): string {
  * @returns {string} The absolute created file path.
  */
 export function createFile(filePath: string, contents: string = ""): string {
+  logToolCall("createFile", {
+    filePath,
+    contents: createLogPreview(contents),
+  });
   const rootDir = getGlobalReplRootDir();
   const resolvedFilePath = resolvePathWithinRoot(filePath, rootDir, false);
   assertWritableTarget(resolvedFilePath);
   fs.mkdirSync(path.dirname(resolvedFilePath), { recursive: true });
   fs.writeFileSync(resolvedFilePath, contents, "utf-8");
+  logToolReturn("createFile");
   return resolvedFilePath;
 }
 
@@ -69,10 +79,15 @@ export function createFile(filePath: string, contents: string = ""): string {
  * @returns {string} The absolute modified file path.
  */
 export function appendToFile(filePath: string, contents: string): string {
+  logToolCall("appendToFile", {
+    filePath,
+    contents: createLogPreview(contents),
+  });
   const rootDir = getGlobalReplRootDir();
   const resolvedFilePath = resolvePathWithinRoot(filePath, rootDir);
   assertWritableTarget(resolvedFilePath);
   fs.appendFileSync(resolvedFilePath, contents, "utf-8");
+  logToolReturn("appendToFile");
   return resolvedFilePath;
 }
 
@@ -82,6 +97,7 @@ export function appendToFile(filePath: string, contents: string): string {
  * @returns {string} The absolute deleted file path.
  */
 export function deleteFile(filePath: string): string {
+  logToolCall("deleteFile", { filePath });
   const rootDir = getGlobalReplRootDir();
   const resolvedFilePath = resolvePathWithinRoot(filePath, rootDir);
   assertWritableTarget(resolvedFilePath);
@@ -90,6 +106,7 @@ export function deleteFile(filePath: string): string {
     `Deletion cancelled by user for file: ${resolvedFilePath}`,
   );
   fs.unlinkSync(resolvedFilePath);
+  logToolReturn("deleteFile");
   return resolvedFilePath;
 }
 
@@ -99,6 +116,7 @@ export function deleteFile(filePath: string): string {
  * @returns {string} The absolute deleted directory path.
  */
 export function deleteDirectory(directoryPath: string): string {
+  logToolCall("deleteDirectory", { directoryPath });
   const rootDir = getGlobalReplRootDir();
   const resolvedDirectoryPath = resolvePathWithinRoot(directoryPath, rootDir);
   assertWritableTarget(resolvedDirectoryPath);
@@ -107,5 +125,6 @@ export function deleteDirectory(directoryPath: string): string {
     `Deletion cancelled by user for directory: ${resolvedDirectoryPath}`,
   );
   fs.rmSync(resolvedDirectoryPath, { recursive: true, force: false });
+  logToolReturn("deleteDirectory");
   return resolvedDirectoryPath;
 }
