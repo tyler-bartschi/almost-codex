@@ -1,0 +1,25 @@
+{
+  "name": "almost-codex isolated runtime",
+  "build": {
+    "context": "..",
+    "dockerfile": "../Dockerfile.devcontainer"
+  },
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "type=tmpfs,target=/tmp/devcontainer-workspace",
+  "mounts": [
+    "type=tmpfs,target=/workspace/experiment,tmpfs-mode=1777"
+  ],
+  "containerEnv": {
+    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.cwd": "/workspace/experiment"
+      }
+    }
+  },
+  "overrideCommand": false,
+  "remoteUser": "node",
+  "shutdownAction": "stopContainer"
+}
