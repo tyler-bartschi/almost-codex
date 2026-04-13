@@ -39,9 +39,9 @@ describe("ToolRegistry", () => {
         parameters: {
           type: "object",
           properties: {},
+          required: [],
           additionalProperties: false,
         },
-        required: [],
       },
     ]);
   });
@@ -68,9 +68,9 @@ describe("ToolRegistry", () => {
               description: "The text content to append to the file.",
             },
           },
+          required: ["filePath", "contents"],
           additionalProperties: false,
         },
-        required: ["filePath", "contents"],
       },
       {
         type: "function",
@@ -90,9 +90,9 @@ describe("ToolRegistry", () => {
               description: "The text content to write into the new file.",
             },
           },
+          required: ["filePath"],
           additionalProperties: false,
         },
-        required: ["filePath"],
       },
       {
         type: "function",
@@ -108,9 +108,9 @@ describe("ToolRegistry", () => {
               description: "The relative path of the directory to create.",
             },
           },
+          required: ["directoryPath"],
           additionalProperties: false,
         },
-        required: ["directoryPath"],
       },
     ]);
   });
@@ -141,9 +141,9 @@ describe("ToolRegistry", () => {
               description: "The relative path of the directory to delete.",
             },
           },
+          required: ["directoryPath"],
           additionalProperties: false,
         },
-        required: ["directoryPath"],
       },
       {
         type: "function",
@@ -159,9 +159,9 @@ describe("ToolRegistry", () => {
               description: "The relative path of the file to delete.",
             },
           },
+          required: ["filePath"],
           additionalProperties: false,
         },
-        required: ["filePath"],
       },
       {
         type: "function",
@@ -181,9 +181,9 @@ describe("ToolRegistry", () => {
               description: "The text content to write into the new file.",
             },
           },
+          required: ["filePath"],
           additionalProperties: false,
         },
-        required: ["filePath"],
       },
     ]);
   });
@@ -210,9 +210,9 @@ describe("ToolRegistry", () => {
               description: "Markdown content to write into the planning file.",
             },
           },
+          required: ["name", "content"],
           additionalProperties: false,
         },
-        required: ["name", "content"],
       },
     ]);
   });
@@ -241,9 +241,9 @@ describe("ToolRegistry", () => {
               description: "The UNIX-based terminal command to execute from the project root.",
             },
           },
+          required: ["command"],
           additionalProperties: false,
         },
-        required: ["command"],
       },
     ]);
   });
@@ -272,9 +272,9 @@ describe("ToolRegistry", () => {
               description: "Planning file name to read.",
             },
           },
+          required: ["filename"],
           additionalProperties: false,
         },
-        required: ["filename"],
       },
     ]);
   });
@@ -307,9 +307,9 @@ describe("ToolRegistry", () => {
               description: "The prompt text to send to the spawned agent.",
             },
           },
+          required: ["agentName", "prompt"],
           additionalProperties: false,
         },
-        required: ["agentName", "prompt"],
       },
     ]);
   });

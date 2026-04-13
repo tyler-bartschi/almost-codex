@@ -134,8 +134,10 @@ function validateToolArguments(
   argumentsObject: unknown,
 ): string | undefined {
   const parameters = toolDefinition.parameters as ToolParametersDefinition | undefined;
-  const required = Array.isArray(toolDefinition.required)
-    ? toolDefinition.required.filter((value): value is string => typeof value === "string")
+  const required = Array.isArray(parameters?.required)
+    ? parameters.required.filter((value): value is string => typeof value === "string")
+    : Array.isArray(toolDefinition.required)
+      ? toolDefinition.required.filter((value): value is string => typeof value === "string")
     : [];
   const additionalProperties =
     typeof parameters?.additionalProperties === "boolean"
