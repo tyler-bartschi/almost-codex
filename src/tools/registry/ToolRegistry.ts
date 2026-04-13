@@ -219,7 +219,63 @@ export class ToolRegistry {
       ToolRegistry.validateToolCollectionSection(value[sectionName], sectionName, registryPath);
     }
 
-    return value as ToolRegistryContents;
+    return ToolRegistry.normalizeToolRegistryContents(value as ToolRegistryContents);
+  }
+
+  /**
+   * Normalizes registry tool schemas so every declared parameter is marked as required.
+   * @param {ToolRegistryContents} registryContents Parsed registry contents after shape validation.
+   * @returns {ToolRegistryContents} A cloned registry with normalized parameter requirement lists.
+   */
+  private static normalizeToolRegistryContents(
+    registryContents: ToolRegistryContents,
+  ): ToolRegistryContents {
+    return {
+      read: ToolRegistry.normalizeToolCollection(registryContents.read),
+      write: ToolRegistry.normalizeToolCollection(registryContents.write),
+      scripts: ToolRegistry.normalizeToolCollection(registryContents.scripts),
+      savePlan: ToolRegistry.normalizeToolCollection(registryContents.savePlan),
+      readPlan: ToolRegistry.normalizeToolCollection(registryContents.readPlan),
+      spawnAgent: ToolRegistry.normalizeToolCollection(registryContents.spawnAgent),
+    };
+  }
+
+  /**
+   * Normalizes every tool definition in a registry section.
+   * @param {ToolCollection} toolCollection Tool definitions grouped under a single top-level section.
+   * @returns {ToolCollection} A cloned collection with normalized parameter requirement lists.
+   */
+  private static normalizeToolCollection(toolCollection: ToolCollection): ToolCollection {
+    return Object.fromEntries(
+      Object.entries(toolCollection).map(([toolName, toolDefinition]) => [
+        toolName,
+        ToolRegistry.normalizeToolDefinition(toolDefinition),
+      ]),
+    );
+  }
+
+  /**
+   * Normalizes one tool definition so all declared parameters are required.
+   * @param {ToolDefinition} toolDefinition Tool definition to normalize.
+   * @returns {ToolDefinition} A cloned tool definition with normalized parameters.
+   */
+  private static normalizeToolDefinition(toolDefinition: ToolDefinition): ToolDefinition {
+    const parameters = toolDefinition.parameters as ToolParametersDefinition | undefined;
+
+    if (parameters?.type !== "object") {
+      return { ...toolDefinition };
+    }
+
+    const properties = parameters.properties ?? {};
+
+    return {
+      ...toolDefinition,
+      parameters: {
+        ...parameters,
+        properties: { ...properties },
+        required: Object.keys(properties),
+      },
+    };
   }
 
   /**
