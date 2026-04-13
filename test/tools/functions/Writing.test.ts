@@ -108,6 +108,17 @@ describe("Writing tools", () => {
     expect(fs.readFileSync(createdPath, "utf-8")).toBe("");
   });
 
+  it("returns the root directory when the request names the root directory", () => {
+    const rootNamedPath = path.join(tempRoot, "writing-tools-root");
+    fs.mkdirSync(rootNamedPath);
+    setWritingReplState(rootNamedPath);
+
+    const createdPath = createDirectory(path.basename(rootNamedPath));
+
+    expect(createdPath).toBe(rootNamedPath);
+    expect(fs.statSync(createdPath).isDirectory()).toBe(true);
+  });
+
   it("appends contents to an existing file without overwriting existing contents", () => {
     const filePath = path.join(tempRoot, "log.txt");
     fs.writeFileSync(filePath, "first line", "utf-8");

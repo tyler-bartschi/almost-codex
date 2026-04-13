@@ -90,6 +90,15 @@ describe("Reading tools", () => {
     expect(readContext(filePath)).toBe("visible");
   });
 
+  it("reads the root directory when the request names the root directory", () => {
+    const rootNamedPath = path.join(tempRoot, "reading-tools-root");
+    fs.mkdirSync(rootNamedPath);
+    fs.writeFileSync(path.join(rootNamedPath, "note.txt"), "visible", "utf-8");
+    setReadingReplState(rootNamedPath);
+
+    expect(readContext(path.basename(rootNamedPath))).toBe("File: note.txt\nvisible");
+  });
+
   it("rejects a path when it exactly matches a concealed object", () => {
     const filePath = path.join(tempRoot, "secret.txt");
     fs.writeFileSync(filePath, "hidden", "utf-8");

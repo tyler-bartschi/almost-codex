@@ -216,6 +216,32 @@ export function isSameOrNestedPath(candidatePath: string, parentPath: string): b
 }
 
 /**
+ * Normalizes a requested path so references to the root directory itself resolve back to the root.
+ * @param {string} requestedPath File or directory path requested by the caller.
+ * @param {string} resolvedRootDir Absolute normalized root directory.
+ * @returns {string} A path string safe to resolve against `resolvedRootDir`.
+ */
+export function normalizeRequestedPathWithinRoot(
+  requestedPath: string,
+  resolvedRootDir: string,
+): string {
+  const trimmedRequestedPath = requestedPath.trim();
+  const requestedPathSegments = trimmedRequestedPath.split(path.sep).filter((segment) => segment !== "");
+
+  if (
+    trimmedRequestedPath === "." ||
+    trimmedRequestedPath === "" ||
+    path.resolve(trimmedRequestedPath) === resolvedRootDir ||
+    (requestedPathSegments.length === 1 &&
+      requestedPathSegments[0] === path.basename(resolvedRootDir))
+  ) {
+    return ".";
+  }
+
+  return requestedPath;
+}
+
+/**
  * Resolves a requested path against the provided root directory and optionally verifies that it exists.
  * @param {string} requestedPath File or directory path requested by the caller.
  * @param {string} rootDir Absolute root directory from which access is allowed.
@@ -232,7 +258,8 @@ export function resolvePathWithinRoot(
   }
 
   const resolvedRootDir = path.resolve(rootDir);
-  const resolvedTargetPath = path.resolve(resolvedRootDir, requestedPath);
+  const normalizedRequestedPath = normalizeRequestedPathWithinRoot(requestedPath, resolvedRootDir);
+  const resolvedTargetPath = path.resolve(resolvedRootDir, normalizedRequestedPath);
 
   if (!isSameOrNestedPath(resolvedTargetPath, resolvedRootDir)) {
     throw new Error(`Requested file or directory cannot be found: ${requestedPath}`);

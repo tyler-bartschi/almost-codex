@@ -1,3 +1,6 @@
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { initializeGlobalPromptStore } from "../../../src/global/PromptStore";
 import { Settings, type AgentSettings } from "../../../src/global/Settings";
 import { clearGlobalReplState, setGlobalReplState } from "../../../src/global/ReplStateStore";
@@ -6,6 +9,8 @@ import type { ReplState } from "../../../src/repl/ReplExecutorTypes";
 import {
   buildAgentExecutionContext,
   normalizePermissionsToCategories,
+  normalizeRequestedPathWithinRoot,
+  resolvePathWithinRoot,
 } from "../../../src/tools/utils/ToolUtils";
 
 /**
@@ -46,6 +51,15 @@ function createReplState(settings: Settings): ReplState {
     shouldExit: false,
     shouldClear: false,
   };
+}
+
+/**
+ * Creates a temporary test workspace directory.
+ * @param {string} prefix Prefix used for the temp directory name.
+ * @returns {string} The created temporary directory path.
+ */
+function createTempWorkspace(prefix: string): string {
+  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
 describe("ToolUtils", () => {
@@ -117,5 +131,24 @@ describe("ToolUtils", () => {
         "unknown",
       ]),
     ).toEqual(["read", "write", "scripts", "savePlan", "readPlan", "spawnAgent"]);
+  });
+
+  it("normalizes a single-segment request that names the root directory", () => {
+    const rootDir = path.join("/workspace", "experiment");
+
+    expect(normalizeRequestedPathWithinRoot("experiment", rootDir)).toBe(".");
+  });
+
+  it("resolves a request that names the root directory back to the root path", () => {
+    const tempRoot = createTempWorkspace("tool-utils-root-");
+
+    try {
+      const nestedRoot = path.join(tempRoot, "experiment");
+      fs.mkdirSync(nestedRoot);
+
+      expect(resolvePathWithinRoot("experiment", nestedRoot)).toBe(nestedRoot);
+    } finally {
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
   });
 });
