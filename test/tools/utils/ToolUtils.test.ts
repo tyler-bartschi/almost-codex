@@ -50,7 +50,7 @@ function createReplState(settings: Settings): ReplState {
 
 describe("ToolUtils", () => {
   beforeEach(() => {
-    initializeGlobalPromptStore(process.cwd());
+    initializeGlobalPromptStore();
     initializeGlobalToolRegistry();
     clearGlobalReplState();
   });

@@ -385,7 +385,7 @@ export async function main(): Promise<void> {
   if (!runStartupChecks(initialState)) {
     return;
   }
-  initializeGlobalPromptStore(process.cwd());
+  initializeGlobalPromptStore();
   initializeGlobalToolRegistry();
   let { model, reasoning, history, tools } = createAgentRuntimeContext(
     requireGlobalReplState().currentAgent,

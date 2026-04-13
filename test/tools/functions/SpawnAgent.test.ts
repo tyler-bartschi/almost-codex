@@ -70,7 +70,7 @@ function createMockClient(responses: MockResponse[]): OpenAI {
 
 describe("spawnAgent", () => {
   beforeEach(() => {
-    initializeGlobalPromptStore(process.cwd());
+    initializeGlobalPromptStore();
     initializeGlobalToolRegistry();
     clearGlobalReplState();
     jest.restoreAllMocks();

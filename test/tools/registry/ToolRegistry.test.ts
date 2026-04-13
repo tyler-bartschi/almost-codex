@@ -4,6 +4,28 @@ import * as os from "os";
 import * as path from "path";
 
 describe("ToolRegistry", () => {
+  it("loads the bundled registry without relying on the current working directory", () => {
+    const originalCwd = process.cwd();
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "tool-registry-cwd-"));
+
+    try {
+      process.chdir(tempDir);
+
+      const toolRegistry = new ToolRegistry();
+
+      expect(toolRegistry.getReadTools()).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "listDirectoryTree",
+          }),
+        ]),
+      );
+    } finally {
+      process.chdir(originalCwd);
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
   it("returns read tool definitions without their registry keys", () => {
     const toolRegistry = new ToolRegistry();
 

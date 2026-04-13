@@ -21,6 +21,9 @@ import {
   setGlobalReplState,
 } from "../../src/global/ReplStateStore";
 import type { ReplState } from "../../src/repl/ReplExecutorTypes";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 
 /**
  * Builds a REPL state fixture with initialized settings for prompt store tests.
@@ -67,7 +70,7 @@ describe("PromptStore", () => {
   });
 
   it("returns the initialized personalities map", () => {
-    const store = initializeGlobalPromptStore(process.cwd());
+    const store = initializeGlobalPromptStore();
     const personalities = getPersonalities();
 
     expect(personalities).toBe(store.personalities);
@@ -81,7 +84,7 @@ describe("PromptStore", () => {
   });
 
   it("returns the initialized grouped prompt map", () => {
-    const store = initializeGlobalPromptStore(process.cwd());
+    const store = initializeGlobalPromptStore();
     const prompts = getPrompts();
 
     expect(prompts).toBe(store.prompts);
@@ -98,6 +101,23 @@ describe("PromptStore", () => {
     expect("prompt" in prompts).toBe(false);
     expect("prompt" in prompts.ask).toBe(false);
     expect("prompt" in prompts.code).toBe(false);
+  });
+
+  it("loads bundled prompts without relying on the current working directory", () => {
+    const originalCwd = process.cwd();
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "prompt-store-cwd-"));
+
+    try {
+      process.chdir(tempDir);
+
+      const store = initializeGlobalPromptStore();
+
+      expect(store.personalities.efficient).toContain("efficient assistant");
+      expect(store.prompts.ask.chat).toContain("You are the Ask Chat agent.");
+    } finally {
+      process.chdir(originalCwd);
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 
   it.each([
@@ -135,7 +155,7 @@ describe("PromptStore", () => {
   ])(
     "returns the personality and task system prompts for %s",
     (_getterName, getter, expectedPersonalitySnippet, expectedTaskSnippet) => {
-      initializeGlobalPromptStore(process.cwd());
+      initializeGlobalPromptStore();
       setGlobalReplState(createReplStateFixture());
 
       expect(getter()).toEqual([
@@ -152,7 +172,7 @@ describe("PromptStore", () => {
   );
 
   it("uses the settings default personality when the agent personality is default", () => {
-    initializeGlobalPromptStore(process.cwd());
+    initializeGlobalPromptStore();
     const settings = createSettingsFixture({ defaultPersonality: "pirate" });
     setGlobalReplState(createReplStateFixture({ settings }));
 
@@ -163,7 +183,7 @@ describe("PromptStore", () => {
   });
 
   it("uses the agent-specific personality when one is configured", () => {
-    initializeGlobalPromptStore(process.cwd());
+    initializeGlobalPromptStore();
     const agentSettings = structuredClone(createSettingsFixture().agentSettings) as AgentSettings;
     agentSettings.code.executor.personality = "sarcastic";
     const settings = createSettingsFixture({ agentSettings });
@@ -188,14 +208,14 @@ describe("PromptStore", () => {
     ["plan.synthesizer", getPlanSynthesizerPrompt],
     ["test.tester", getTestTesterPrompt],
   ])("returns the same prompt pair as the existing getter for %s", (agentFullName, getter) => {
-    initializeGlobalPromptStore(process.cwd());
+    initializeGlobalPromptStore();
     setGlobalReplState(createReplStateFixture());
 
     expect(getPrompt(agentFullName)).toEqual(getter());
   });
 
   it("throws when the agent full name does not map to a prompt getter", () => {
-    initializeGlobalPromptStore(process.cwd());
+    initializeGlobalPromptStore();
     setGlobalReplState(createReplStateFixture());
 
     expect(() => getPrompt("code.unknown")).toThrow(

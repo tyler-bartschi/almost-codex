@@ -185,22 +185,17 @@ export class ToolRegistry {
   }
 
   /**
-   * Resolves the ToolRegistry.json path using the compiled location first and source as a fallback.
+   * Resolves the ToolRegistry.json path relative to this module.
    * @returns {string} The absolute path to the tool registry JSON file.
    */
   private static getDefaultRegistryPath(): string {
-    const candidatePaths = [
-      path.join(__dirname, "ToolRegistry.json"),
-      path.resolve(process.cwd(), "src", "tools", "registry", "ToolRegistry.json"),
-    ];
+    const registryPath = path.join(__dirname, "ToolRegistry.json");
 
-    for (const candidatePath of candidatePaths) {
-      if (fs.existsSync(candidatePath)) {
-        return candidatePath;
-      }
+    if (!fs.existsSync(registryPath)) {
+      throw new Error(`ToolRegistry.json could not be found: ${registryPath}`);
     }
 
-    throw new Error("ToolRegistry.json could not be found.");
+    return registryPath;
   }
 
   /**

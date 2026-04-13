@@ -25,6 +25,14 @@ type RawPromptFile = {
 let globalPromptStore: PromptStore | undefined;
 
 /**
+ * Resolves the absolute directory path that contains bundled prompt assets.
+ * @returns {string} The absolute bundled assets directory path.
+ */
+function getBundledAssetsDir(): string {
+  return path.resolve(__dirname, "..");
+}
+
+/**
  * Parses a YAML prompt file and returns only its prompt text.
  * @param {string} filePath The file path to parse.
  * @returns {string} The prompt text stored in the file.
@@ -98,14 +106,13 @@ function loadPrompts(promptsDir: string): PromptMap {
 }
 
 /**
- * Initializes the global prompt store from the repository prompt directories.
- * @param {string} rootDir The project root directory that contains the `src` folder.
+ * Initializes the global prompt store from the bundled prompt directories.
+ * @param {string} [assetsDir] Optional base directory that contains `personalities` and `prompts`.
  * @returns {PromptStore} The initialized prompt store contents.
  */
-export function initializeGlobalPromptStore(rootDir: string = process.cwd()): PromptStore {
-  const promptsRootDir = path.join(rootDir, "src");
-  const personalitiesDir = path.join(promptsRootDir, "personalities");
-  const promptsDir = path.join(promptsRootDir, "prompts");
+export function initializeGlobalPromptStore(assetsDir: string = getBundledAssetsDir()): PromptStore {
+  const personalitiesDir = path.join(assetsDir, "personalities");
+  const promptsDir = path.join(assetsDir, "prompts");
 
   globalPromptStore = {
     personalities: loadPersonalities(personalitiesDir),

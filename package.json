@@ -5,10 +5,11 @@
   "main": "index.js",
   "scripts": {
     "build": "npm run compile",
-    "compile": "npm run clean && npm run test && tsc && npm run copy-settings && npm run copy-tool-registry",
+    "compile": "npm run clean && npm run test && tsc && npm run copy-settings && npm run copy-tool-registry && npm run copy-prompts",
     "clean": "rm -rf dist",
     "copy-settings": "node -e \"require('fs').cpSync('src/settings','dist/settings',{recursive:true,force:true})\"",
     "copy-tool-registry": "node -e \"require('fs').mkdirSync('dist/tools/registry',{recursive:true});require('fs').copyFileSync('src/tools/registry/ToolRegistry.json','dist/tools/registry/ToolRegistry.json')\"",
+    "copy-prompts": "node -e \"require('fs').cpSync('src/prompts','dist/prompts',{recursive:true,force:true});require('fs').cpSync('src/personalities','dist/personalities',{recursive:true,force:true})\"",
     "script": "node ./dist/index.js",
     "test": "jest --config jest.config.js --passWithNoTests"
   },
