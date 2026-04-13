@@ -1,8 +1,6 @@
 import { getGlobalReplSettings } from "../global/ReplStateStore";
 import { getGlobalToolRegistry } from "../global/ToolRegistryStore";
-import type { AgentMode } from "../global/Settings";
 import type {
-  ToolCategory,
   ToolDefinition,
   ToolParametersDefinition,
 } from "./registry/ToolRegistry";
@@ -21,6 +19,10 @@ import {
 import { readPlan, savePlan } from "./functions/Planning";
 import { runTerminal } from "./functions/Terminal";
 import { spawnAgent } from "./functions/SpawnAgent";
+import {
+  normalizePermissionsToCategories,
+  resolveAgentIdentifier,
+} from "./utils/ToolUtils";
 
 type ToolArguments = Record<string, unknown>;
 type ToolImplementation = (argumentsObject: ToolArguments) => unknown | Promise<unknown>;
@@ -46,51 +48,6 @@ const TOOL_IMPLEMENTATIONS: Record<string, ToolImplementation> = {
   spawnAgent: (argumentsObject) =>
     spawnAgent(argumentsObject.agentName as never, argumentsObject.prompt as string),
 };
-
-/**
- * Resolves a full agent identifier into its mode and configured agent name.
- * @param {string} fullAgentName Agent identifier in `<mode>.<agent>` form.
- * @returns {{ mode: AgentMode; agentName: string } | undefined} The resolved agent reference, or `undefined` when invalid.
- */
-function resolveAgentIdentifier(
-  fullAgentName: string,
-): { mode: AgentMode; agentName: string } | undefined {
-  const settings = getGlobalReplSettings();
-  const [mode, agentName] = fullAgentName.split(".", 2);
-
-  if (mode === undefined || agentName === undefined || !(mode in settings.agentSettings)) {
-    return undefined;
-  }
-
-  const typedMode = mode as AgentMode;
-  if (!settings.agentSettings[typedMode]?.[agentName]) {
-    return undefined;
-  }
-
-  return { mode: typedMode, agentName };
-}
-
-/**
- * Normalizes agent permission tokens into tool registry category names.
- * @param {string[]} permissions Permissions configured for the active agent.
- * @returns {ToolCategory[]} Tool registry categories derived from the permissions.
- */
-function normalizePermissionsToCategories(permissions: string[]): ToolCategory[] {
-  return permissions.reduce<ToolCategory[]>((categories, permission) => {
-    if (
-      permission === "read" ||
-      permission === "write" ||
-      permission === "scripts" ||
-      permission === "savePlan" ||
-      permission === "readPlan" ||
-      permission === "spawnAgent"
-    ) {
-      categories.push(permission);
-    }
-
-    return categories;
-  }, []);
-}
 
 /**
  * Returns whether a value is a plain JSON-like object.
@@ -265,8 +222,11 @@ export async function runTool(
   argumentsObject: ToolArguments,
 ): Promise<string> {
   try {
-    const resolvedAgent = resolveAgentIdentifier(fullAgentName);
-    if (resolvedAgent === undefined) {
+    let resolvedAgent;
+
+    try {
+      resolvedAgent = resolveAgentIdentifier(fullAgentName);
+    } catch {
       return INACCESSIBLE_TOOL_MESSAGE;
     }
 

@@ -1,19 +1,31 @@
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import * as readline from "readline";
+import type {
+  ResponseFunctionToolCall,
+  ResponseFunctionToolCallOutputItem,
+  ResponseInput,
+  ResponseInputItem,
+  ResponseOutputItem,
+  Tool,
+} from "openai/resources/responses/responses";
+import type { ReasoningEffort } from "openai/resources/shared";
 import { initializeGlobalPromptStore } from "./global/PromptStore";
 import { initializeGlobalToolRegistry } from "./global/ToolRegistryStore";
 import {
+  getGlobalReplCurrentAgent,
   getGlobalReplCurrentMode,
   getGlobalReplShouldClear,
   getGlobalReplShouldExit,
   requireGlobalReplState,
   setGlobalReplState,
 } from "./global/ReplStateStore";
-import { Settings, type AgentMode } from "./global/Settings";
+import { Settings, type AgentMode, type OpenAIModel } from "./global/Settings";
 import { ReplExecutor, type ReplState } from "./repl/ReplExecutor";
 import { runReplGitSafeCheck } from "./repl/ReplGitSafeCheck";
 import { ReplParser } from "./repl/ReplParser";
+import { runTool } from "./tools/ToolExecutor";
+import { buildAgentExecutionContext } from "./tools/utils/ToolUtils";
 
 dotenv.config({ quiet: true });
 
@@ -47,12 +59,33 @@ function createInitialState(rootDir: string): ReplState {
   const currentMode: AgentMode = "code";
   return {
     currentMode,
-    currentAgent: "code.orchestrator",
+    currentAgent: getDefaultAgentForMode(currentMode),
     rootDir,
     settings,
     shouldExit: false,
     shouldClear: false,
   };
+}
+
+/**
+ * Returns the default top-level agent identifier for a REPL mode.
+ *
+ * @param {AgentMode} mode REPL mode whose primary chat agent should be used.
+ * @returns {string} Full agent identifier in `<mode>.<agent>` form.
+ */
+function getDefaultAgentForMode(mode: AgentMode): string {
+  switch (mode) {
+    case "ask":
+      return "ask.chat";
+    case "code":
+      return "code.orchestrator";
+    case "plan":
+      return "plan.chat";
+    case "test":
+      return "test.tester";
+    case "document":
+      return "document.chat";
+  }
 }
 
 /**
@@ -164,6 +197,157 @@ function shutdownInput(): void {
 }
 
 /**
+ * Narrows a response output item to a function tool call.
+ *
+ * @param {ResponseOutputItem} item Raw output item returned by the Responses API.
+ * @returns {item is ResponseFunctionToolCall} `true` when the item is a function call.
+ */
+function isFunctionToolCall(
+  item: ResponseOutputItem,
+): item is ResponseFunctionToolCall {
+  return item.type === "function_call";
+}
+
+/**
+ * Rebuilds the active model context when the selected top-level agent changes.
+ *
+ * @param {string} fullAgentName Full agent identifier to activate.
+ * @returns {{ model: OpenAIModel; reasoning: Exclude<ReasoningEffort, null>; history: ResponseInput; tools: Tool[] }} Fresh execution context for the selected agent.
+ */
+function createAgentRuntimeContext(
+  fullAgentName: string,
+): {
+  model: OpenAIModel;
+  reasoning: Exclude<ReasoningEffort, null>;
+  history: ResponseInput;
+  tools: Tool[];
+} {
+  const agentContext = buildAgentExecutionContext(fullAgentName);
+  return {
+    model: agentContext.model,
+    reasoning: agentContext.reasoning,
+    history: agentContext.history,
+    tools: agentContext.tools,
+  };
+}
+
+/**
+ * Synchronizes global REPL agent state with the currently selected mode.
+ *
+ * When the mode changes, this resets the active agent identifier along with the
+ * in-memory prompt history and available tool list for the new mode.
+ *
+ * @param {OpenAIModel} model Current model value to replace when needed.
+ * @param {Exclude<ReasoningEffort, null>} reasoning Current reasoning value to replace when needed.
+ * @param {ResponseInput} history Current mutable history array to replace when needed.
+ * @param {Tool[]} tools Current tool list to replace when needed.
+ * @returns {{ model: OpenAIModel; reasoning: Exclude<ReasoningEffort, null>; history: ResponseInput; tools: Tool[] }} Either the original runtime values or a freshly rebuilt agent context.
+ */
+function syncMainAgentContext(
+  model: OpenAIModel,
+  reasoning: Exclude<ReasoningEffort, null>,
+  history: ResponseInput,
+  tools: Tool[],
+): {
+  model: OpenAIModel;
+  reasoning: Exclude<ReasoningEffort, null>;
+  history: ResponseInput;
+  tools: Tool[];
+} {
+  const state = requireGlobalReplState();
+  const nextAgent = getDefaultAgentForMode(state.currentMode);
+
+  if (state.currentAgent === nextAgent) {
+    return { model, reasoning, history, tools };
+  }
+
+  state.currentAgent = nextAgent;
+  return createAgentRuntimeContext(nextAgent);
+}
+
+/**
+ * Runs one top-level agent turn for the interactive REPL.
+ *
+ * The main loop keeps executing model-requested tools until the model returns
+ * user-facing text. Tool call outputs and assistant items are appended to the
+ * shared history so the next user turn continues the same conversation.
+ *
+ * @param {Object} params Turn execution parameters.
+ * @param {OpenAI} params.client OpenAI client instance used for model calls.
+ * @param {string} params.fullAgentName Active top-level agent identifier.
+ * @param {OpenAIModel} params.model Model name to execute.
+ * @param {Exclude<ReasoningEffort, null>} params.reasoning Reasoning effort for the response call.
+ * @param {ResponseInput} params.history Mutable conversation history for the active agent.
+ * @param {Tool[]} params.tools Tools exposed to the active agent.
+ * @returns {Promise<string>} Assistant text returned to the REPL user for this turn.
+ */
+async function runMainAgentTurn({
+  client,
+  fullAgentName,
+  model,
+  reasoning,
+  history,
+  tools,
+}: {
+  client: OpenAI;
+  fullAgentName: string;
+  model: OpenAIModel;
+  reasoning: Exclude<ReasoningEffort, null>;
+  history: ResponseInput;
+  tools: Tool[];
+}): Promise<string> {
+  while (true) {
+    const response = await client.responses.create({
+      model,
+      reasoning: { effort: reasoning },
+      input: history,
+      tools,
+    });
+
+    history.push(...(response.output as ResponseInputItem[]));
+
+    const toolCalls = response.output.filter(isFunctionToolCall);
+
+    if (toolCalls.length === 0) {
+      return response.output_text;
+    }
+
+    const toolOutputs: ResponseFunctionToolCallOutputItem[] = [];
+    const parseFailureMessages: ResponseInputItem[] = [];
+
+    for (const call of toolCalls) {
+      let parsedArguments: unknown;
+
+      try {
+        parsedArguments = JSON.parse(call.arguments);
+      } catch {
+        parseFailureMessages.push({
+          role: "user",
+          content: `Unable to parse JSON arguments for function call "${call.name}" (call_id: ${call.call_id}). Please retry the function call with valid JSON arguments.`,
+        });
+        continue;
+      }
+
+      const toolOutput = await runTool(
+        fullAgentName,
+        call.name,
+        parsedArguments as Record<string, unknown>,
+      );
+
+      toolOutputs.push({
+        id: `fco_${call.call_id}`,
+        type: "function_call_output",
+        call_id: call.call_id,
+        output: toolOutput,
+      });
+    }
+
+    history.push(...parseFailureMessages);
+    history.push(...toolOutputs);
+  }
+}
+
+/**
  * Runs the startup git-safe guard and handles any startup failure gracefully.
  *
  * @param {ReplState} initialState Initial REPL state containing settings and root directory.
@@ -194,8 +378,6 @@ function runStartupChecks(initialState: ReplState): boolean {
  */
 export async function main(): Promise<void> {
   const client = createOpenAIClient();
-  // void client;
-
   const parser = new ReplParser();
   const executor = new ReplExecutor();
   const initialState = createInitialState(process.cwd());
@@ -205,6 +387,9 @@ export async function main(): Promise<void> {
   }
   initializeGlobalPromptStore(process.cwd());
   initializeGlobalToolRegistry();
+  let { model, reasoning, history, tools } = createAgentRuntimeContext(
+    requireGlobalReplState().currentAgent,
+  );
 
   while (true) {
     // note to agents: this console.log is intentional to provide a new line before every prompt. do not remove
@@ -231,11 +416,34 @@ export async function main(): Promise<void> {
     }
 
     if (parsed.kind === "text") {
-      console.log(parsed.text);
+      ({ model, reasoning, history, tools } = syncMainAgentContext(
+        model,
+        reasoning,
+        history,
+        tools,
+      ));
+      history.push({ role: "user", content: parsed.text });
+      const output = await runMainAgentTurn({
+        fullAgentName: getGlobalReplCurrentAgent(),
+        client,
+        model,
+        reasoning,
+        history,
+        tools,
+      });
+      if (output.length > 0) {
+        console.log(output);
+      }
       continue;
     }
 
     const output = executor.execute(parsed.command);
+    ({ model, reasoning, history, tools } = syncMainAgentContext(
+      model,
+      reasoning,
+      history,
+      tools,
+    ));
 
     if (getGlobalReplShouldClear()) {
       process.stdout.write("\u001Bc");

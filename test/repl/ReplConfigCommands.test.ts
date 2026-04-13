@@ -5,7 +5,7 @@ import {
   setGlobalReplState,
 } from "../../src/global/ReplStateStore";
 import { Settings } from "../../src/global/Settings";
-import { ReplConfigCommands } from "../../src/repl/replConfigCommands";
+import { ReplConfigCommands } from "../../src/repl/ReplConfigCommands";
 import { ReplExecutorSupport } from "../../src/repl/ReplExecutorSupport";
 import { ReplParser } from "../../src/repl/ReplParser";
 

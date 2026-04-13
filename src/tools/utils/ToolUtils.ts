@@ -1,10 +1,185 @@
 import * as fs from "fs";
 import * as path from "path";
+import type { ResponseInput, Tool } from "openai/resources/responses/responses";
+import type { ReasoningEffort } from "openai/resources/shared";
 import promptSync from "prompt-sync";
+import { getPrompt } from "../../global/PromptStore";
+import { getGlobalReplSettings } from "../../global/ReplStateStore";
+import { getGlobalToolRegistry } from "../../global/ToolRegistryStore";
+import type {
+  AgentMode,
+  OpenAIModel,
+  OpenAIReasoningMode,
+} from "../../global/Settings";
 import type { FileSystemObject } from "../../global/Settings";
+import type { ToolCategory } from "../registry/ToolRegistry";
 
 export type RestrictedObjectLike = Pick<FileSystemObject, "path" | "type">;
+export interface ResolvedAgentIdentifier {
+  mode: AgentMode;
+  agentName: string;
+}
+
+export interface AgentExecutionContext {
+  fullAgentName: string;
+  mode: AgentMode;
+  agentName: string;
+  model: OpenAIModel;
+  reasoning: Exclude<ReasoningEffort, null>;
+  history: ResponseInput;
+  tools: Tool[];
+}
+
 const DEFAULT_LOG_PREVIEW_LINE_COUNT = 4;
+
+/**
+ * Resolves a full agent identifier into its mode and configured agent name.
+ * @param {string} fullAgentName Agent identifier in `<mode>.<agent>` form.
+ * @returns {ResolvedAgentIdentifier} The resolved mode and agent name.
+ */
+export function resolveAgentIdentifier(fullAgentName: string): ResolvedAgentIdentifier {
+  const settings = getGlobalReplSettings();
+  const [mode, agentName] = fullAgentName.split(".", 2);
+
+  if (mode === undefined || agentName === undefined || !(mode in settings.agentSettings)) {
+    throw new Error(`Agent "${fullAgentName}" does not exist.`);
+  }
+
+  const typedMode = mode as AgentMode;
+
+  if (settings.agentSettings[typedMode]?.[agentName] === undefined) {
+    throw new Error(`Agent "${fullAgentName}" does not exist.`);
+  }
+
+  return { mode: typedMode, agentName };
+}
+
+/**
+ * Returns the available short agent names for a mode.
+ * @param {AgentMode} mode Active mode whose agent names should be listed.
+ * @returns {string[]} Sorted short agent names available in that mode.
+ */
+export function getAvailableAgentNames(mode: AgentMode): string[] {
+  const settings = getGlobalReplSettings();
+
+  return Object.keys(settings.agentSettings[mode] ?? {}).sort();
+}
+
+/**
+ * Resolves the effective model for an agent by applying default fallbacks.
+ * @param {OpenAIModel | "default"} agentModel Agent-specific model setting.
+ * @returns {OpenAIModel} Concrete model name to use for the agent.
+ */
+export function resolveAgentModel(agentModel: OpenAIModel | "default"): OpenAIModel {
+  const settings = getGlobalReplSettings();
+
+  return agentModel === "default" ? settings.defaultModel : agentModel;
+}
+
+/**
+ * Resolves the effective reasoning effort for an agent by applying default fallbacks.
+ * @param {OpenAIReasoningMode | "default"} agentReasoning Agent-specific reasoning setting.
+ * @returns {Exclude<ReasoningEffort, null>} Concrete reasoning effort for the agent.
+ */
+export function resolveAgentReasoning(
+  agentReasoning: OpenAIReasoningMode | "default",
+): Exclude<ReasoningEffort, null> {
+  const settings = getGlobalReplSettings();
+  const reasoning = agentReasoning === "default" ? settings.defaultReasoning : agentReasoning;
+
+  return reasoning as Exclude<ReasoningEffort, null>;
+}
+
+/**
+ * Normalizes an agent permission token into a tool registry category.
+ * @param {string} permission Permission token from agent settings.
+ * @returns {ToolCategory | undefined} Matching registry category, or `undefined` when unsupported.
+ */
+export function normalizePermissionToCategory(permission: string): ToolCategory | undefined {
+  if (
+    permission === "read" ||
+    permission === "write" ||
+    permission === "scripts" ||
+    permission === "savePlan" ||
+    permission === "readPlan" ||
+    permission === "spawnAgent"
+  ) {
+    return permission;
+  }
+
+  return undefined;
+}
+
+/**
+ * Converts agent permission tokens into tool registry categories.
+ * @param {string[]} permissions Permission tokens configured for the agent.
+ * @returns {ToolCategory[]} Registry categories exposed to the agent.
+ */
+export function normalizePermissionsToCategories(permissions: string[]): ToolCategory[] {
+  return permissions.reduce<ToolCategory[]>((categories, permission) => {
+    const category = normalizePermissionToCategory(permission);
+
+    if (category !== undefined) {
+      categories.push(category);
+    }
+
+    return categories;
+  }, []);
+}
+
+/**
+ * Builds a fresh prompt history array for the specified agent.
+ * @param {string} fullAgentName Full agent identifier in `<mode>.<agent>` format.
+ * @returns {ResponseInput} System prompt history for the agent.
+ */
+export function buildAgentHistory(fullAgentName: string): ResponseInput {
+  return [...getPrompt(fullAgentName)];
+}
+
+/**
+ * Resolves the function tools accessible to the specified agent.
+ * @param {string} fullAgentName Full agent identifier in `<mode>.<agent>` format.
+ * @returns {Tool[]} Tool definitions exposed to the agent.
+ */
+export function buildAgentTools(fullAgentName: string): Tool[] {
+  const { mode, agentName } = resolveAgentIdentifier(fullAgentName);
+  const settings = getGlobalReplSettings();
+  const agentSettings = settings.agentSettings[mode]?.[agentName];
+
+  if (agentSettings === undefined) {
+    throw new Error(`Agent "${fullAgentName}" does not exist.`);
+  }
+
+  const toolRegistry = getGlobalToolRegistry();
+  const categories = normalizePermissionsToCategories(agentSettings.permissions);
+
+  return toolRegistry.getToolsForCategories(categories) as Tool[];
+}
+
+/**
+ * Builds the complete execution context for the specified agent.
+ * @param {string} fullAgentName Full agent identifier in `<mode>.<agent>` format.
+ * @returns {AgentExecutionContext} Model settings, prompt history, and allowed tools for the agent.
+ */
+export function buildAgentExecutionContext(fullAgentName: string): AgentExecutionContext {
+  const { mode, agentName } = resolveAgentIdentifier(fullAgentName);
+  const settings = getGlobalReplSettings();
+  const agentSettings = settings.agentSettings[mode]?.[agentName];
+
+  if (agentSettings === undefined) {
+    throw new Error(`Agent "${fullAgentName}" does not exist.`);
+  }
+
+  return {
+    fullAgentName,
+    mode,
+    agentName,
+    model: resolveAgentModel(agentSettings.model),
+    reasoning: resolveAgentReasoning(agentSettings.reasoning),
+    history: buildAgentHistory(fullAgentName),
+    tools: buildAgentTools(fullAgentName),
+  };
+}
 
 /**
  * Returns normalized path variants used when comparing restricted entries.
