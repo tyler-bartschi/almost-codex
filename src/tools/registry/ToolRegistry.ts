@@ -14,6 +14,7 @@ type ToolParameterProperty = {
 type ToolParametersDefinition = {
   type: string;
   properties?: Record<string, ToolParameterProperty>;
+  additionalProperties?: boolean;
 };
 
 type ToolCollection = Record<string, ToolDefinition>;

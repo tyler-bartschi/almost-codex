@@ -197,6 +197,26 @@ function shutdownInput(): void {
 }
 
 /**
+ * Formats an unknown thrown value into a user-facing error message.
+ *
+ * @param {unknown} error Thrown value to format.
+ * @returns {string} A printable error message.
+ */
+function formatErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * Prints a recoverable REPL error and leaves the loop ready for the next prompt.
+ *
+ * @param {unknown} error Thrown value raised while processing one REPL turn.
+ * @returns {void} Does not return a value.
+ */
+function reportRecoverableReplError(error: unknown): void {
+  console.error(`Error: ${formatErrorMessage(error)}`);
+}
+
+/**
  * Narrows a response output item to a function tool call.
  *
  * @param {ResponseOutputItem} item Raw output item returned by the Responses API.
@@ -406,64 +426,74 @@ export async function main(): Promise<void> {
     }
     const parsed = parser.parse(input);
 
-    if (parsed.kind === "empty") {
-      continue;
-    }
+    try {
+      if (parsed.kind === "empty") {
+        continue;
+      }
 
-    if (parsed.kind === "error") {
-      console.log(parsed.message);
-      continue;
-    }
+      if (parsed.kind === "error") {
+        console.log(parsed.message);
+        continue;
+      }
 
-    if (parsed.kind === "text") {
+      if (parsed.kind === "text") {
+        ({ model, reasoning, history, tools } = syncMainAgentContext(
+          model,
+          reasoning,
+          history,
+          tools,
+        ));
+        const historyLengthBeforeTurn = history.length;
+
+        try {
+          history.push({ role: "user", content: parsed.text });
+          const output = await runMainAgentTurn({
+            fullAgentName: getGlobalReplCurrentAgent(),
+            client,
+            model,
+            reasoning,
+            history,
+            tools,
+          });
+          if (output.length > 0) {
+            console.log(output);
+          }
+        } catch (error) {
+          history.splice(historyLengthBeforeTurn);
+          reportRecoverableReplError(error);
+        }
+        continue;
+      }
+
+      const output = executor.execute(parsed.command);
       ({ model, reasoning, history, tools } = syncMainAgentContext(
         model,
         reasoning,
         history,
         tools,
       ));
-      history.push({ role: "user", content: parsed.text });
-      const output = await runMainAgentTurn({
-        fullAgentName: getGlobalReplCurrentAgent(),
-        client,
-        model,
-        reasoning,
-        history,
-        tools,
-      });
+
+      if (getGlobalReplShouldClear()) {
+        process.stdout.write("\u001Bc");
+        requireGlobalReplState().shouldClear = false;
+        continue;
+      }
+
       if (output.length > 0) {
         console.log(output);
       }
-      continue;
-    }
 
-    const output = executor.execute(parsed.command);
-    ({ model, reasoning, history, tools } = syncMainAgentContext(
-      model,
-      reasoning,
-      history,
-      tools,
-    ));
-
-    if (getGlobalReplShouldClear()) {
-      process.stdout.write("\u001Bc");
-      requireGlobalReplState().shouldClear = false;
-      continue;
-    }
-
-    if (output.length > 0) {
-      console.log(output);
-    }
-
-    if (getGlobalReplShouldExit()) {
-      shutdownInput();
-      return;
+      if (getGlobalReplShouldExit()) {
+        shutdownInput();
+        return;
+      }
+    } catch (error) {
+      reportRecoverableReplError(error);
     }
   }
 }
 
 void main().catch((error) => {
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(message);
+  console.error(formatErrorMessage(error));
   process.exitCode = 1;
 });

@@ -7,10 +7,10 @@
       "strict": true,
       "parameters": {
         "type": "object",
-        "properties": {}
+        "properties": {},
+        "additionalProperties": false
       },
-      "required": [],
-      "additionalProperties": false
+      "required": []
     },
     "findLocation": {
       "type": "function",
@@ -24,12 +24,12 @@
             "type": "string",
             "description": "The exact file or directory name to search for."
           }
-        }
+        },
+        "additionalProperties": false
       },
       "required": [
         "name"
-      ],
-      "additionalProperties": false
+      ]
     },
     "readContext": {
       "type": "function",
@@ -43,12 +43,12 @@
             "type": "string",
             "description": "The relative path of the file or directory to read."
           }
-        }
+        },
+        "additionalProperties": false
       },
       "required": [
         "targetPath"
-      ],
-      "additionalProperties": false
+      ]
     }
   },
   "write": {
@@ -64,12 +64,12 @@
             "type": "string",
             "description": "The relative path of the directory to delete."
           }
-        }
+        },
+        "additionalProperties": false
       },
       "required": [
         "directoryPath"
-      ],
-      "additionalProperties": false
+      ]
     },
     "deleteFile": {
       "type": "function",
@@ -83,12 +83,12 @@
             "type": "string",
             "description": "The relative path of the file to delete."
           }
-        }
+        },
+        "additionalProperties": false
       },
       "required": [
         "filePath"
-      ],
-      "additionalProperties": false
+      ]
     },
     "appendToFile": {
       "type": "function",
@@ -106,13 +106,13 @@
             "type": "string",
             "description": "The text content to append to the file."
           }
-        }
+        },
+        "additionalProperties": false
       },
       "required": [
         "filePath",
         "contents"
-      ],
-      "additionalProperties": false
+      ]
     },
     "createFile": {
       "type": "function",
@@ -130,12 +130,12 @@
             "type": "string",
             "description": "The text content to write into the new file."
           }
-        }
+        },
+        "additionalProperties": false
       },
       "required": [
         "filePath"
-      ],
-      "additionalProperties": false
+      ]
     },
     "createDirectory": {
       "type": "function",
@@ -149,12 +149,12 @@
             "type": "string",
             "description": "The relative path of the directory to create."
           }
-        }
+        },
+        "additionalProperties": false
       },
       "required": [
         "directoryPath"
-      ],
-      "additionalProperties": false
+      ]
     }
   },
   "scripts": {
@@ -170,12 +170,12 @@
             "type": "string",
             "description": "The UNIX-based terminal command to execute from the project root."
           }
-        }
+        },
+        "additionalProperties": false
       },
       "required": [
         "command"
-      ],
-      "additionalProperties": false
+      ]
     }
   },
   "savePlan": {
@@ -195,13 +195,13 @@
             "type": "string",
             "description": "Markdown content to write into the planning file."
           }
-        }
+        },
+        "additionalProperties": false
       },
       "required": [
         "name",
         "content"
-      ],
-      "additionalProperties": false
+      ]
     }
   },
   "readPlan": {
@@ -217,12 +217,12 @@
             "type": "string",
             "description": "Planning file name to read."
           }
-        }
+        },
+        "additionalProperties": false
       },
       "required": [
         "filename"
-      ],
-      "additionalProperties": false
+      ]
     }
   },
   "spawnAgent": {
@@ -242,13 +242,13 @@
             "type": "string",
             "description": "The prompt text to send to the spawned agent."
           }
-        }
+        },
+        "additionalProperties": false
       },
       "required": [
         "agentName",
         "prompt"
-      ],
-      "additionalProperties": false
+      ]
     }
   }
 }

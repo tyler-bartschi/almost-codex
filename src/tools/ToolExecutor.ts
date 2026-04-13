@@ -138,8 +138,10 @@ function validateToolArguments(
     ? toolDefinition.required.filter((value): value is string => typeof value === "string")
     : [];
   const additionalProperties =
-    typeof toolDefinition.additionalProperties === "boolean"
-      ? toolDefinition.additionalProperties
+    typeof parameters?.additionalProperties === "boolean"
+      ? parameters.additionalProperties
+      : typeof toolDefinition.additionalProperties === "boolean"
+        ? toolDefinition.additionalProperties
       : undefined;
 
   if (parameters === undefined) {
