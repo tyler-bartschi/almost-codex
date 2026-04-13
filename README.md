@@ -45,11 +45,10 @@ VS Code will build the Docker image automatically. You do not need to run `docke
    cd /workspace/experiment
    ```
 
-5. Run the CLI from `/workspace`:
+5. Run the CLI while staying in `/workspace/experiment` so tool paths resolve against the scratch workspace:
 
    ```sh
-   cd /workspace
-   node dist/index.js
+   node /workspace/dist/index.js
    ```
 
 ## Notes

@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import dotenv from "dotenv";
+import * as path from "path";
 import * as readline from "readline";
 import type {
   ResponseFunctionToolCall,
@@ -46,6 +47,28 @@ function createOpenAIClient(): OpenAI {
   }
 
   return new OpenAI({ apiKey });
+}
+
+/**
+ * Resolves the filesystem root the REPL should expose to tools.
+ *
+ * Prefers an explicit override, then npm's preserved invocation directory,
+ * and finally falls back to the current process working directory.
+ *
+ * @returns {string} The absolute root directory to store in REPL state.
+ */
+export function resolveInitialRootDir(): string {
+  const overrideRootDir = process.env.ALMOST_CODEX_ROOT_DIR;
+  if (overrideRootDir !== undefined && overrideRootDir.trim().length > 0) {
+    return path.resolve(overrideRootDir);
+  }
+
+  const initCwd = process.env.INIT_CWD;
+  if (initCwd !== undefined && initCwd.trim().length > 0) {
+    return path.resolve(initCwd);
+  }
+
+  return process.cwd();
 }
 
 /**
@@ -400,7 +423,7 @@ export async function main(): Promise<void> {
   const client = createOpenAIClient();
   const parser = new ReplParser();
   const executor = new ReplExecutor();
-  const initialState = createInitialState(process.cwd());
+  const initialState = createInitialState(resolveInitialRootDir());
   setGlobalReplState(initialState);
   if (!runStartupChecks(initialState)) {
     return;
@@ -493,7 +516,9 @@ export async function main(): Promise<void> {
   }
 }
 
-void main().catch((error) => {
-  console.error(formatErrorMessage(error));
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  void main().catch((error) => {
+    console.error(formatErrorMessage(error));
+    process.exitCode = 1;
+  });
+}
