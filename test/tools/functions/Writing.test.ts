@@ -119,6 +119,17 @@ describe("Writing tools", () => {
     expect(fs.statSync(createdPath).isDirectory()).toBe(true);
   });
 
+  it("creates a nested file when the request starts with the root directory name", () => {
+    const rootNamedPath = path.join(tempRoot, "writing-tools-root-child");
+    fs.mkdirSync(rootNamedPath);
+    setWritingReplState(rootNamedPath);
+
+    const createdPath = createFile(path.join(path.basename(rootNamedPath), "test.md"), "content");
+
+    expect(createdPath).toBe(path.join(rootNamedPath, "test.md"));
+    expect(fs.readFileSync(createdPath, "utf-8")).toBe("content");
+  });
+
   it("appends contents to an existing file without overwriting existing contents", () => {
     const filePath = path.join(tempRoot, "log.txt");
     fs.writeFileSync(filePath, "first line", "utf-8");

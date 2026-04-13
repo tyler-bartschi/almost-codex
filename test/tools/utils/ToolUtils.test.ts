@@ -139,6 +139,14 @@ describe("ToolUtils", () => {
     expect(normalizeRequestedPathWithinRoot("experiment", rootDir)).toBe(".");
   });
 
+  it("strips a leading root-directory segment from nested relative paths", () => {
+    const rootDir = path.join("/workspace", "experiment");
+
+    expect(normalizeRequestedPathWithinRoot(path.join("experiment", "test.md"), rootDir)).toBe(
+      "test.md",
+    );
+  });
+
   it("resolves a request that names the root directory back to the root path", () => {
     const tempRoot = createTempWorkspace("tool-utils-root-");
 
@@ -147,6 +155,23 @@ describe("ToolUtils", () => {
       fs.mkdirSync(nestedRoot);
 
       expect(resolvePathWithinRoot("experiment", nestedRoot)).toBe(nestedRoot);
+    } finally {
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("resolves a nested request that starts with the root directory name within the root path", () => {
+    const tempRoot = createTempWorkspace("tool-utils-root-child-");
+
+    try {
+      const nestedRoot = path.join(tempRoot, "experiment");
+      const nestedFilePath = path.join(nestedRoot, "test.md");
+      fs.mkdirSync(nestedRoot);
+      fs.writeFileSync(nestedFilePath, "hello", "utf-8");
+
+      expect(resolvePathWithinRoot(path.join("experiment", "test.md"), nestedRoot)).toBe(
+        nestedFilePath,
+      );
     } finally {
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }

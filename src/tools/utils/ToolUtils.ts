@@ -226,16 +226,20 @@ export function normalizeRequestedPathWithinRoot(
   resolvedRootDir: string,
 ): string {
   const trimmedRequestedPath = requestedPath.trim();
-  const requestedPathSegments = trimmedRequestedPath.split(path.sep).filter((segment) => segment !== "");
+  const normalizedRequestedPath = path.normalize(trimmedRequestedPath);
+  const requestedPathSegments = normalizedRequestedPath
+    .split(path.sep)
+    .filter((segment) => segment !== "");
+  const rootDirectoryName = path.basename(resolvedRootDir);
 
   if (
     trimmedRequestedPath === "." ||
     trimmedRequestedPath === "" ||
     path.resolve(trimmedRequestedPath) === resolvedRootDir ||
-    (requestedPathSegments.length === 1 &&
-      requestedPathSegments[0] === path.basename(resolvedRootDir))
+    (requestedPathSegments.length > 0 && requestedPathSegments[0] === rootDirectoryName)
   ) {
-    return ".";
+    const normalizedRelativePath = requestedPathSegments.slice(1).join(path.sep);
+    return normalizedRelativePath === "" ? "." : normalizedRelativePath;
   }
 
   return requestedPath;
