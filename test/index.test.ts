@@ -1,5 +1,9 @@
 import * as path from "path";
-import { resolveInitialRootDir } from "../src/index";
+import {
+  calculateTerminalCursorRowOffset,
+  calculateTerminalRows,
+  resolveInitialRootDir,
+} from "../src/index";
 
 /**
  * Manages environment variable overrides used while resolving the REPL root directory.
@@ -60,5 +64,33 @@ describe("resolveInitialRootDir", () => {
     environmentOverrideManager.setEnvironmentValue("INIT_CWD", undefined);
 
     expect(resolveInitialRootDir()).toBe(process.cwd());
+  });
+});
+
+describe("calculateTerminalRows", () => {
+  it("returns one row for content shorter than the terminal width", () => {
+    expect(calculateTerminalRows("[code]> hello", 80)).toBe(1);
+  });
+
+  it("adds a wrapped row once content exceeds the terminal width", () => {
+    expect(calculateTerminalRows("12345678901", 10)).toBe(2);
+  });
+
+  it("treats an exact terminal-width line as a single visible row", () => {
+    expect(calculateTerminalRows("1234567890", 10)).toBe(1);
+  });
+});
+
+describe("calculateTerminalCursorRowOffset", () => {
+  it("keeps the cursor on the first row before wrapping", () => {
+    expect(calculateTerminalCursorRowOffset("[code]> hello", 80)).toBe(0);
+  });
+
+  it("moves the cursor to the next row after the content reaches terminal width", () => {
+    expect(calculateTerminalCursorRowOffset("1234567890", 10)).toBe(1);
+  });
+
+  it("tracks additional wrapped rows for longer input", () => {
+    expect(calculateTerminalCursorRowOffset("123456789012345678901", 10)).toBe(2);
   });
 });

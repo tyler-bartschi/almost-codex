@@ -134,7 +134,66 @@ function colorizeLiveInput(line: string): string {
 }
 
 /**
+ * Calculates how many terminal rows a plain-text prompt and input buffer occupy.
+ *
+ * @param {string} text Plain-text terminal content to measure.
+ * @param {number} terminalColumns Current terminal width in columns.
+ * @returns {number} Number of visible terminal rows required to render the text.
+ */
+export function calculateTerminalRows(text: string, terminalColumns: number): number {
+  if (terminalColumns <= 0) {
+    return 1;
+  }
+
+  return Math.max(1, Math.floor(Math.max(text.length - 1, 0) / terminalColumns) + 1);
+}
+
+/**
+ * Calculates the zero-based row offset of the terminal cursor after writing plain text.
+ *
+ * @param {string} text Plain-text terminal content to measure.
+ * @param {number} terminalColumns Current terminal width in columns.
+ * @returns {number} The number of rows below the starting row where the cursor ends.
+ */
+export function calculateTerminalCursorRowOffset(
+  text: string,
+  terminalColumns: number,
+): number {
+  if (terminalColumns <= 0) {
+    return 0;
+  }
+
+  return Math.floor(text.length / terminalColumns);
+}
+
+/**
+ * Clears the previously rendered prompt area, including any wrapped terminal rows.
+ *
+ * @param {readline.Interface["output"]} stdout Terminal output stream to manipulate.
+ * @param {number} renderedRows Number of prompt rows that were previously visible.
+ * @returns {void} Does not return a value.
+ */
+function clearRenderedPromptRows(
+  stdout: NodeJS.WriteStream,
+  renderedRows: number,
+): void {
+  for (let rowIndex = 0; rowIndex < renderedRows; rowIndex += 1) {
+    readline.clearLine(stdout, 0);
+
+    if (rowIndex < renderedRows - 1) {
+      readline.moveCursor(stdout, 0, 1);
+    }
+  }
+
+  if (renderedRows > 1) {
+    readline.moveCursor(stdout, 0, -(renderedRows - 1));
+  }
+  readline.cursorTo(stdout, 0);
+}
+
+/**
  * Reads one input line from the terminal with live-rendered input color.
+ *
  * @param promptLabel Prompt text shown before the editable input.
  * @returns The complete line entered by the user.
  */
@@ -157,13 +216,23 @@ function readPromptLine(promptLabel: string): Promise<string> {
     stdin.setRawMode(true);
 
     let buffer = "";
+    let previousRenderedRows = 1;
+    let previousCursorRowOffset = 0;
 
     const render = (): void => {
+      const plainPromptText = `${promptLabel}${buffer}`;
+      const terminalColumns = stdout.columns ?? 80;
+
+      if (previousCursorRowOffset > 0) {
+        readline.moveCursor(stdout, 0, -previousCursorRowOffset);
+      }
       readline.cursorTo(stdout, 0);
-      readline.clearLine(stdout, 0);
+      clearRenderedPromptRows(stdout, previousRenderedRows);
       stdout.write(
         `${ANSI_WHITE}${promptLabel}${colorizeLiveInput(buffer)}${ANSI_RESET}`,
       );
+      previousRenderedRows = calculateTerminalRows(plainPromptText, terminalColumns);
+      previousCursorRowOffset = calculateTerminalCursorRowOffset(plainPromptText, terminalColumns);
     };
 
     const cleanup = (): void => {
