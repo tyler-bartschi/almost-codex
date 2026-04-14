@@ -69,16 +69,21 @@ function setWritingReplState(
 
 describe("Writing tools", () => {
   let tempRoot: string;
+  let stdoutWriteSpy: jest.SpyInstance;
 
   beforeEach(() => {
     tempRoot = createTempWorkspace("writing-tools-");
     setWritingReplState(tempRoot);
     mockedPromptSync.mockReset();
+    stdoutWriteSpy = jest
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
   });
 
   afterEach(() => {
     clearGlobalReplState();
     fs.rmSync(tempRoot, { recursive: true, force: true });
+    stdoutWriteSpy.mockRestore();
   });
 
   it("creates a directory within the root directory", () => {
@@ -150,7 +155,8 @@ describe("Writing tools", () => {
 
     expect(deletedPath).toBe(filePath);
     expect(fs.existsSync(filePath)).toBe(false);
-    expect(promptMock).toHaveBeenCalledWith(`Delete file "${filePath}"? [y/N]: `);
+    expect(stdoutWriteSpy).toHaveBeenCalledWith(`\nDelete file "${filePath}"?\n`);
+    expect(promptMock).toHaveBeenCalledWith("[y/N]: ");
   });
 
   it("deletes an existing directory recursively within the root directory", () => {
@@ -164,7 +170,8 @@ describe("Writing tools", () => {
 
     expect(deletedPath).toBe(directoryPath);
     expect(fs.existsSync(directoryPath)).toBe(false);
-    expect(promptMock).toHaveBeenCalledWith(`Delete directory "${directoryPath}"? [y/N]: `);
+    expect(stdoutWriteSpy).toHaveBeenCalledWith(`\nDelete directory "${directoryPath}"?\n`);
+    expect(promptMock).toHaveBeenCalledWith("[y/N]: ");
   });
 
   it("cancels file deletion when the user does not confirm with y or yes", () => {

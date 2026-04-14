@@ -61,17 +61,22 @@ function setTerminalReplState(rootDir: string): void {
 
 describe("Terminal tools", () => {
   let tempRoot: string;
+  let stdoutWriteSpy: jest.SpyInstance;
 
   beforeEach(() => {
     tempRoot = createTempWorkspace("terminal-tools-");
     setTerminalReplState(tempRoot);
     mockedPromptSync.mockReset();
     mockedExecSync.mockReset();
+    stdoutWriteSpy = jest
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
   });
 
   afterEach(() => {
     clearGlobalReplState();
     fs.rmSync(tempRoot, { recursive: true, force: true });
+    stdoutWriteSpy.mockRestore();
   });
 
   it("returns terminal output after the user approves the command", () => {
@@ -82,9 +87,10 @@ describe("Terminal tools", () => {
     const output = runTerminal("printf 'ok\\n'");
 
     expect(output).toBe("ok\n");
-    expect(promptMock).toHaveBeenCalledWith(
-      `Run terminal command "printf 'ok\\n'" from "${tempRoot}"? [y/N]: `,
+    expect(stdoutWriteSpy).toHaveBeenCalledWith(
+      `\nRun terminal command "printf 'ok\\n'" from "${tempRoot}"?\n`,
     );
+    expect(promptMock).toHaveBeenCalledWith("[y/N]: ");
     expect(mockedExecSync).toHaveBeenCalledWith("printf 'ok\\n'", {
       cwd: tempRoot,
       encoding: "utf-8",

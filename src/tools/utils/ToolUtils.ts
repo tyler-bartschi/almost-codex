@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as path from "path";
 import type { ResponseInput, Tool } from "openai/resources/responses/responses";
 import type { ReasoningEffort } from "openai/resources/shared";
-import promptSync from "prompt-sync";
 import { getPrompt } from "../../global/PromptStore";
 import { getGlobalReplSettings } from "../../global/ReplStateStore";
 import { getGlobalToolRegistry } from "../../global/ToolRegistryStore";
@@ -12,6 +11,7 @@ import type {
   OpenAIReasoningMode,
 } from "../../global/Settings";
 import type { FileSystemObject } from "../../global/Settings";
+import { readInlinePrompt } from "../../repl/Prompting";
 import type { ToolCategory } from "../registry/ToolRegistry";
 
 export type RestrictedObjectLike = Pick<FileSystemObject, "path" | "type">;
@@ -317,8 +317,7 @@ export function isRestrictedPath(
  * @returns {void} Does not return a value.
  */
 export function getUserVerification(promptText: string, rejectionErrorMessage: string): void {
-  const prompt = promptSync({ sigint: true });
-  const response = prompt(promptText).trim().toLowerCase();
+  const response = readInlinePrompt(promptText, "[y/N]: ").trim().toLowerCase();
 
   if (response !== "y" && response !== "yes") {
     throw new Error(rejectionErrorMessage);

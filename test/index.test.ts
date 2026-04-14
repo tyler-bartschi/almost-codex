@@ -1,9 +1,10 @@
 import * as path from "path";
+import { resolveInitialRootDir } from "../src/index";
 import {
   calculateTerminalCursorRowOffset,
   calculateTerminalRows,
-  resolveInitialRootDir,
-} from "../src/index";
+  formatPromptLabel,
+} from "../src/repl/Prompting";
 
 /**
  * Manages environment variable overrides used while resolving the REPL root directory.
@@ -92,5 +93,15 @@ describe("calculateTerminalCursorRowOffset", () => {
 
   it("tracks additional wrapped rows for longer input", () => {
     expect(calculateTerminalCursorRowOffset("123456789012345678901", 10)).toBe(2);
+  });
+});
+
+describe("formatPromptLabel", () => {
+  it("adds a leading newline when the prompt does not already have one", () => {
+    expect(formatPromptLabel("[code]> ")).toBe("\n[code]> ");
+  });
+
+  it("preserves an existing leading newline", () => {
+    expect(formatPromptLabel("\n[code]> ")).toBe("\n[code]> ");
   });
 });

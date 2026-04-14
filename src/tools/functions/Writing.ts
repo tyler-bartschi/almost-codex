@@ -102,7 +102,7 @@ export function deleteFile(filePath: string): string {
   const resolvedFilePath = resolvePathWithinRoot(filePath, rootDir);
   assertWritableTarget(resolvedFilePath);
   getUserVerification(
-    `Delete file "${resolvedFilePath}"? [y/N]: `,
+    `Delete file "${resolvedFilePath}"?`,
     `Deletion cancelled by user for file: ${resolvedFilePath}`,
   );
   fs.unlinkSync(resolvedFilePath);
@@ -121,7 +121,7 @@ export function deleteDirectory(directoryPath: string): string {
   const resolvedDirectoryPath = resolvePathWithinRoot(directoryPath, rootDir);
   assertWritableTarget(resolvedDirectoryPath);
   getUserVerification(
-    `Delete directory "${resolvedDirectoryPath}"? [y/N]: `,
+    `Delete directory "${resolvedDirectoryPath}"?`,
     `Deletion cancelled by user for directory: ${resolvedDirectoryPath}`,
   );
   fs.rmSync(resolvedDirectoryPath, { recursive: true, force: false });

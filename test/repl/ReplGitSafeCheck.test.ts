@@ -49,6 +49,7 @@ describe("runReplGitSafeCheck", () => {
   let warnSpy: jest.SpyInstance;
   let logSpy: jest.SpyInstance;
   let errorSpy: jest.SpyInstance;
+  let stdoutWriteSpy: jest.SpyInstance;
 
   beforeEach(() => {
     mockedPromptSync.mockReset();
@@ -56,12 +57,16 @@ describe("runReplGitSafeCheck", () => {
     warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     logSpy = jest.spyOn(console, "log").mockImplementation(() => undefined);
     errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    stdoutWriteSpy = jest
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
   });
 
   afterEach(() => {
     warnSpy.mockRestore();
     logSpy.mockRestore();
     errorSpy.mockRestore();
+    stdoutWriteSpy.mockRestore();
   });
 
   it("continues immediately when git mode is unsafe", () => {
@@ -118,6 +123,9 @@ describe("runReplGitSafeCheck", () => {
 
     expect(result).toBe(true);
     expect(mockedPromptSync).toHaveBeenCalledWith({ sigint: true });
+    expect(stdoutWriteSpy).toHaveBeenCalledWith(
+      "\nGit safe mode detected uncommitted changes.\n",
+    );
     expect(mockedSpawnSync).toHaveBeenNthCalledWith(
       3,
       "git",
@@ -141,6 +149,10 @@ describe("runReplGitSafeCheck", () => {
         encoding: "utf-8",
         stdio: "pipe",
       },
+    );
+    const promptFactory = mockedPromptSync.mock.results[0]?.value as PromptFunction;
+    expect(promptFactory).toHaveBeenCalledWith(
+      "Enter a commit message (leave blank for default): ",
     );
     expect(logSpy).toHaveBeenCalledWith("Saved existing git changes before starting the REPL.");
   });

@@ -12,7 +12,7 @@ export function runTerminal(command: string): string {
   const rootDir = getGlobalReplRootDir();
 
   getUserVerification(
-    `Run terminal command "${command}" from "${rootDir}"? [y/N]: `,
+    `Run terminal command "${command}" from "${rootDir}"?`,
     `Terminal command cancelled by user: ${command}`,
   );
 

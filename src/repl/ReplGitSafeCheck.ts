@@ -1,6 +1,6 @@
 import { spawnSync, type SpawnSyncReturns } from "child_process";
-import promptSync from "prompt-sync";
 import type { Settings } from "../global/Settings";
+import { readInlinePrompt } from "./Prompting";
 
 const DEFAULT_STARTUP_COMMIT_MESSAGE = "saving prior changes on almost-codex startup";
 
@@ -82,9 +82,9 @@ function hasUncommittedChanges(rootDir: string): boolean {
  * @returns {string} The user-supplied commit message or the default startup message.
  */
 function promptForCommitMessage(): string {
-  const prompt = promptSync({ sigint: true });
-  const commitMessage = prompt(
-    "Git safe mode detected uncommitted changes. Enter a commit message (leave blank for default): ",
+  const commitMessage = readInlinePrompt(
+    "Git safe mode detected uncommitted changes.",
+    "Enter a commit message (leave blank for default): ",
   ).trim();
   return commitMessage.length > 0 ? commitMessage : DEFAULT_STARTUP_COMMIT_MESSAGE;
 }
