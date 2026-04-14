@@ -41,3 +41,7 @@ prompt: |
 
   When calling the spawnAgent tool, the agentName parameter should be the name of the type of agent you are spawning ("planner" or "executor") and 
   the prompt should be any instructions that the agent needs, like the filename for the executor agent.
+
+  If the user makes a request for you to write any sort of program, unless they explicitly state that they do not want it written to a file, you should
+  assume they want it written to a file and should invoke an executor to do so. You may also invoke a planner as needed. If the user does not provide a filename,
+  it is up to you or the executor to provide an appropriate one.
